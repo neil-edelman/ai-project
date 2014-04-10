@@ -1,0 +1,13 @@
+# Server version 0.08 running on wpa131010.wireless.mcgill.ca:8123
+# Game ID: 2
+# Board class: halma.CCBoard
+# Timeout: 1000
+# Date: Sun Apr 06 20:48:20 EDT 2014
+# Player 1: Player-0, 'Human', running on wpa131010.wireless.mcgill.ca
+# Player 2: Player-1, 'Human', running on wpa131010.wireless.mcgill.ca
+# Player 3: Player-2, 'Human', running on wpa131010.wireless.mcgill.ca
+# Player 4: Player-3, 'Human', running on wpa131010.wireless.mcgill.ca
+START Player-0 Human
+START Player-1 Human
+START Player-2 Human
+START Player-3 Human

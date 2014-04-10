@@ -1,0 +1,15 @@
+# Server version 0.08 running on www.smart-browser.com:8123
+# Game ID: 45
+# Board class: halma.CCBoard
+# Timeout: 300000
+# Date: Tue Apr 08 22:26:33 EDT 2014
+# Player 1: Player-0, 'random', running on www.smart-browser.com
+# Player 2: Player-1, '110121860', running on www.smart-browser.com
+# Player 3: Player-2, 'random', running on www.smart-browser.com
+# Player 4: Player-3, 'random', running on www.smart-browser.com
+START Player-0 random
+START Player-1 110121860
+START Player-2 random
+START Player-3 random
+0 (2,0) (4,0)
+0 null null
