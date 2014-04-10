@@ -3,6 +3,9 @@
 /* packages confuse me */
 package s110121860;
 
+/* java stuff */
+import java.util.LinkedList;
+
 /* import game stuff */
 import java.util.ArrayList; /* used in CCBoard as a return type */
 import boardgame.Board;
@@ -39,6 +42,7 @@ public class s110121860Player extends Player {
 	 assert(n < alpabet.size()) */
 	private static final int size   = 16;
 	private static final int stones = 13;
+	private static final int bufMoves = stones * 4 /* players */ * 2 /* just to be safe */;
 	private static final String alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
 	/* the params */
@@ -46,15 +50,20 @@ public class s110121860Player extends Player {
 
 	/* working dynimic variables */
 	private static Point a = new Point(), b = new Point();
+	/*private ArrayList<CCMove> tempMoves = new ArrayList<CCMove>(initialMoves);*/
+	private CCMove bufMove[] = new CCMove[bufMoves];
 
 	/* convenient things */
 	private boolean isInitialised = false;
+	private boolean isMoving      = false;
 	private int    move = 0;
 	private Corner corner;
 	private Corner ally;
 	private Corner pieces[][] = new Corner[size][size];
 	private int constHill[][] = new int[size][size];
 	private int hill[][]      = new int[size][size];
+	private LinkedList<CCMove> nextMoves;
+	private Point[] myStones  = new Point[stones];
 
 	/* used at the end of jumps */
 	private CCMove goNowhere;
@@ -68,6 +77,7 @@ public class s110121860Player extends Player {
 	 @param s the name (I assume?) */
 	public s110121860Player(String s) {
 		super(s);
+		for(int i = 0; i < stones; i++) myStones[i] = new Point();
 	}
 
 	/** @param pt
@@ -107,26 +117,26 @@ public class s110121860Player extends Player {
 			case 0:
 				corner = Corner.TOP_LEFT;
 				ally = Corner.BOTTOM_RIGHT;
-				a.x = 0;
-				a.y = 0;
+				a.x = size - 1;
+				a.y = size - 1;
 				break;
 			case 1:
 				corner = Corner.BOTTOM_LEFT;
 				ally   = Corner.TOP_RIGHT;
-				a.x = 0;
-				a.y = size - 1;
+				a.x = size - 1;
+				a.y = 0;
 				break;
 			case 2:
 				corner = Corner.TOP_RIGHT;
 				ally   = Corner.BOTTOM_LEFT;
-				a.x = size - 1;
-				a.y = 0;
+				a.x = 0;
+				a.y = size - 1;
 				break;
 			case 3:
 				corner = Corner.BOTTOM_RIGHT;
 				ally   = Corner.TOP_LEFT;
-				a.x = size - 1;
-				a.y = size - 1;
+				a.x = 0;
+				a.y = 0;
 				break;
 		}
 		/* the distance to the goal */
@@ -134,11 +144,13 @@ public class s110121860Player extends Player {
 			for(int x = 0; x < size; x++) {
 				b.x = x;
 				b.y = y;
-				constHill[y][x] = metric(a, b) * param_distance;
+				constHill[y][x] = -metric(a, b) * param_distance;
 				System.err.printf("%3d", constHill[y][x]);
 			}
 			System.err.printf("\n");
 		}
+		/* move buffer */
+		for(int i = 0; i < bufMoves; i++) bufMove[i] = new CCMove(playerID, new Point(), new Point());
 		/* fixme: augment squares on the diagonal */
 		/* fixme: */
 		/* fixme: augment squares in the goal zone to make them more attactive */
@@ -160,15 +172,16 @@ public class s110121860Player extends Player {
 	private void getPieces(CCBoard board) {
 		Integer piece;
 		Corner p;
+		int my = 0;
 
 		for(int y = 0; y < size; y++) {
 			for(int x = 0; x < size; x++) {
 				a.x = x;
 				a.y = y;
 				/* getPieces is good but it allocates memory every time */
-				piece = board.getPieceAt(a);
-				if(piece == null) p = Corner.NONE;
-				else {
+				if((piece = board.getPieceAt(a)) == null) {
+					p = Corner.NONE;
+				} else {
 					switch(piece) {
 						case 0:    p = Corner.TOP_LEFT;     break;
 						case 1:    p = Corner.BOTTOM_LEFT;  break;
@@ -178,8 +191,18 @@ public class s110121860Player extends Player {
 					}
 				}
 				pieces[y][x] = p;
+				/* save the index */
+				if(my < stones && p == corner) {
+					myStones[my].x = x;
+					myStones[my].y = y;
+					my++;
+				}
 			}
 		}
+		for(int i = 0; i < my; i++) {
+			System.err.print(pt2string(myStones[i]) + ";");
+		}
+		System.err.print("(" + my + ")\n");
 	}
 
 	/** prints the board */
@@ -209,6 +232,11 @@ public class s110121860Player extends Player {
 
 		/* this happens once */
 		if(!isInitialised) initialise();
+
+		/* is doing a move? (this is a bad system :[ ) */
+		if(isMoving) {
+			
+		}
 
 		/* this is sketchy */
 		CCBoard board = (CCBoard)theboard;
@@ -246,10 +274,7 @@ public class s110121860Player extends Player {
 				best = move;
 				System.err.print("the best so far ");
 			}
-			//System.err.print(move.getPlayer_id() + ": " + (P2D)from + "->" + to + ".\n");
-			//System.err.print("(" + from.x + ", " + from.y + ") -> (" + to.x + ", " + to.y + ") [" + delta + "]\n");
 			System.err.print(pt2string(from) + " -> " + pt2string(to) + " [" + delta + "]\n");
-			//System.err.print(move.toPrettyString() + " (" + delta + ")\n");
 		}
 
 		/* FIXME: uhhh, the null move is a very valid move, but it balks;
