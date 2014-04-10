@@ -5,6 +5,7 @@ package s110121860;
 
 /* java stuff */
 import java.util.LinkedList;
+import java.util.Stack;
 import java.lang.Exception;
 
 /* import game stuff */
@@ -25,7 +26,8 @@ public class s110121860Player extends Player {
 		TOP_LEFT,
 		BOTTOM_LEFT,
 		BOTTOM_RIGHT,
-		NONE
+		NONE,
+		EXPLORED
 		/* fixme
 		 public Corner(int confusing) {
 			switch(confusing) {
@@ -38,14 +40,14 @@ public class s110121860Player extends Player {
 		}*/
 	};
 
-	/* the board is n x n (I assume the real variable is somewhere in the
-	 bowels of the code, but I do not want to go searching though it)
+	/* the board is n x n
 	 assert(size >= alphabet.length()) */
-	private static final int size   = 16;
+	private static final int size   = CCBoard.SIZE /* 16 */;
 	private static final int stones = 13;
 	/* fixme: probably be better as an ArrayList */
 	private static final int storedMoves = stones * 4 /* players */ * 2 /* just to be safe */;
 	private static final String alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+	private static final int[][] moves = {{1, 1}, {1, 0}, {1, -1}, {0, -1}, {-1, -1}, {-1, 0}, {-1, 1}, {0, 1}};
 
 	/* the params */
 	private static final int param_distance      = 1;
@@ -58,7 +60,7 @@ public class s110121860Player extends Player {
 
 	/* convenient things */
 	private boolean isInitialised = false;
-	private boolean isMoving      = false;
+	// private boolean isMoving   = false; accessed from nextMoves.isEmpty()
 	private int    move = 0;
 	private Corner corner;
 	private Corner ally;
@@ -243,9 +245,27 @@ public class s110121860Player extends Player {
 
 	/** return the best moves for each player based on hill climbing */
 	LinkedList<CCMove> bestMove(final Point start) {
+		int stored = 0;
+		int currentBest;
+		int x, y;
+
+		//board.isLegal(CCMove);
 		try {
-			if(start == null || pieces[start.y][start.x] != corner) throw new Exception("error in bestMove");
+			/*int dx = moves[i][0];
+			int dy = moves[i][1];
+			Point to=new Point(from.x+2*dx, from.y+2*dy);
+			CCMove move=new CCMove(getTurn(), from, to);
+			if(isLegal(move))
+				legalMoves.add(move);
 			
+			if(start == null || pieces[start.y][start.x] != corner) throw new Exception("doesn't make sense in bestMove");
+			x = start.x;
+			y = start.y;
+			if(x+1 < size) {
+				if(pieces[y][x+1] == Corner.NONE) {
+					pieces[y][x+1] = Corner.EXPLORED;
+				}
+			}*/
 		} catch (Exception e) {
 			System.err.print("No way! " + e.getMessage() + ".\n");
 		}
@@ -295,11 +315,14 @@ public class s110121860Player extends Player {
 		for(CCMove move : moves) {
 			from = move.getFrom();
 			to   = move.getTo();
+			/* signals we can stop */
 			if(from == null || to == null) {
-				System.err.print("s110121860Player: ridiculous!!!\n");
-				return goNowhere;
+				delta = 0;
+				//System.err.print("s110121860Player: ridiculous!!!\n");
+				//return goNowhere;
+			} else {
+				delta = this.hill[to.y][to.x] - this.hill[from.y][from.x];
 			}
-			delta = this.hill[to.y][to.x] - this.hill[from.y][from.x];
 			if(bestDelta < delta) {
 				bestDelta = delta;
 				best = move;
@@ -318,6 +341,53 @@ public class s110121860Player extends Player {
 	public Move choseMove() {
 		System.err.print("s110121860Player: this is CRAZY!!!\n");
 		return null;
+	}
+
+	class Jump {
+		/* very high bounds; it would be interesting to see what it actually is */
+		private static final int maxMoves = size * size >> 2;
+		CCMove buffer[] = new CCMove[maxMoves];
+		LinkedList<CCMove> moves = new LinkedList<CCMove>();
+		Stack<CCMove> stack = new Stack<CCMove>();
+		Stack<CCMove> bestStack = new Stack<CCMove>();
+		int bestDelta;
+
+		public Jump() {
+			//for(int i = 0; i < maxMoves; i++) buffer[i] = new CCMove(playerID, new Point(), new Point());
+		}
+
+		public void jump(final Point start) {
+			Corner c;
+
+			int x = start.x;
+			int y = start.y;
+			int bestValue = hill[y][x];
+			int bestX = x;
+			int bestY = y;
+			if(--x >= 0) {
+				c = pieces[y][x];
+				if(c == Corner.NONE) {
+					pieces[y][x] = Corner.EXPLORED;
+					/*value = hill[y][x];
+					if(value > bestValue) {
+						
+						bestX = x;
+						bestY = y;
+					}*/
+				}
+				if(--y >= 0) {
+					
+				}
+			}
+		}
+
+		private void neighbors(final Point p) {
+			int x = p.x - 2;
+			int y = p.y;
+			if(x-2 > 0 && pieces[y][x-2] == Corner.NONE && pieces[y][x-1] != Corner.NONE) {
+				//tree.add();
+			}
+		}
 	}
 }
 
