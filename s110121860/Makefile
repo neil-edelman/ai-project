@@ -3,7 +3,7 @@
 PROJ  := s110121860
 VA    := 0
 VB    := 0
-FILES := s110121860Player
+FILES := s110121860Player Sequence
 SDIR  := src
 BDIR  := bin
 BACK  := backup
