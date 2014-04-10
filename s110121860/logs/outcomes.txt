@@ -23,3 +23,5 @@
 76	110121860	random	random	random	Player-1	random	100	game00076.log	
 78	110121860	Human	random	random	Player-1	Human	100	game00078.log	
 81	110121860	random	random	random	Player-1	random	100	game00081.log	
+83	110121860	random	random	random	Player-1	random	100	game00083.log	
+89	110121860	random	random	random	Player-0	110121860	100	game00089.log	

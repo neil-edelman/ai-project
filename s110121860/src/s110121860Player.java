@@ -5,6 +5,7 @@ package s110121860;
 
 /* java stuff */
 import java.util.LinkedList;
+import java.lang.Exception;
 
 /* import game stuff */
 import java.util.ArrayList; /* used in CCBoard as a return type */
@@ -39,19 +40,21 @@ public class s110121860Player extends Player {
 
 	/* the board is n x n (I assume the real variable is somewhere in the
 	 bowels of the code, but I do not want to go searching though it)
-	 assert(n < alpabet.size()) */
+	 assert(size >= alphabet.length()) */
 	private static final int size   = 16;
 	private static final int stones = 13;
-	private static final int bufMoves = stones * 4 /* players */ * 2 /* just to be safe */;
+	/* fixme: probably be better as an ArrayList */
+	private static final int storedMoves = stones * 4 /* players */ * 2 /* just to be safe */;
 	private static final String alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
 	/* the params */
-	private static final int param_distance = 3;
+	private static final int param_distance      = 1;
+	private static final int param_bonus_endzone = 10;
 
 	/* working dynimic variables */
 	private static Point a = new Point(), b = new Point();
 	/*private ArrayList<CCMove> tempMoves = new ArrayList<CCMove>(initialMoves);*/
-	private CCMove bufMove[] = new CCMove[bufMoves];
+	private CCMove storedMove[] = new CCMove[storedMoves];
 
 	/* convenient things */
 	private boolean isInitialised = false;
@@ -62,21 +65,22 @@ public class s110121860Player extends Player {
 	private Corner pieces[][] = new Corner[size][size];
 	private int constHill[][] = new int[size][size];
 	private int hill[][]      = new int[size][size];
-	private LinkedList<CCMove> nextMoves;
+	private LinkedList<CCMove> nextMoves = new LinkedList<CCMove>(); /* nextMoves picks from storedMove */
 	private Point[] myStones  = new Point[stones];
 
 	/* used at the end of jumps */
 	private CCMove goNowhere;
 
 	/** agent constructor with no args */
-	public s110121860Player() {
+	public s110121860Player() throws Exception {
 		this("110121860");
 	}
 
 	/** agent constructor
 	 @param s the name (I assume?) */
-	public s110121860Player(String s) {
+	public s110121860Player(String s) throws Exception {
 		super(s);
+		if(size >= alphabet.length()) throw new Exception("size < alphabet.length()");
 		for(int i = 0; i < stones; i++) myStones[i] = new Point();
 	}
 
@@ -86,6 +90,13 @@ public class s110121860Player extends Player {
 		if(pt == null) return "(null)";
 		if(pt.x < 0 || pt.y < 0 || pt.x >= size || pt.y >= size) return "(range)";
 		return "" + alphabet.charAt(pt.y) + (pt.x+1);
+	}
+
+	/** @param m move
+	 @return the string representation of a move */
+	private static String move2string(final CCMove m) {
+		if(m == null) return "(null)";
+		return pt2string(m.getFrom()) + "->" + pt2string(m.getTo());
 	}
 
 	/** @param a
@@ -109,10 +120,11 @@ public class s110121860Player extends Player {
 	/** we don't have the player id to fill this out at first, but it must be
 	 filled out before we can play (probably best to . . . whatever) */
 	private void initialise() {
+		int metric, manhattan;
 
 		/* the null move */
 		goNowhere = new CCMove(playerID, null, null);
-		/* localise! */
+		/* localise! (fixme: too much space! do it in the Enum) */
 		switch(playerID) {
 			case 0:
 				corner = Corner.TOP_LEFT;
@@ -144,13 +156,18 @@ public class s110121860Player extends Player {
 			for(int x = 0; x < size; x++) {
 				b.x = x;
 				b.y = y;
-				constHill[y][x] = -metric(a, b) * param_distance;
+				metric    = metric(a, b);
+				manhattan = manhattan(a, b);
+				/* the metric */
+				constHill[y][x]  = (15 - metric) * param_distance;
+				/* the goal zone is enhanced */
+				if((metric <= 3) && (manhattan <= 4)) constHill[y][x] += param_bonus_endzone;
 				System.err.printf("%3d", constHill[y][x]);
 			}
 			System.err.printf("\n");
 		}
 		/* move buffer */
-		for(int i = 0; i < bufMoves; i++) bufMove[i] = new CCMove(playerID, new Point(), new Point());
+		for(int i = 0; i < storedMoves; i++) storedMove[i] = new CCMove(playerID, new Point(), new Point());
 		/* fixme: augment squares on the diagonal */
 		/* fixme: */
 		/* fixme: augment squares in the goal zone to make them more attactive */
@@ -174,35 +191,41 @@ public class s110121860Player extends Player {
 		Corner p;
 		int my = 0;
 
-		for(int y = 0; y < size; y++) {
-			for(int x = 0; x < size; x++) {
-				a.x = x;
-				a.y = y;
-				/* getPieces is good but it allocates memory every time */
-				if((piece = board.getPieceAt(a)) == null) {
-					p = Corner.NONE;
-				} else {
-					switch(piece) {
-						case 0:    p = Corner.TOP_LEFT;     break;
-						case 1:    p = Corner.BOTTOM_LEFT;  break;
-						case 2:    p = Corner.TOP_RIGHT;    break;
-						case 3:    p = Corner.BOTTOM_RIGHT; break;
-						default:   p = Corner.NONE;         break;
+		try {
+			for(int y = 0; y < size; y++) {
+				for(int x = 0; x < size; x++) {
+					a.x = x;
+					a.y = y;
+					/* getPieces is good but it allocates memory every time */
+					if((piece = board.getPieceAt(a)) == null) {
+						p = Corner.NONE;
+					} else {
+						switch(piece) {
+							case 0:    p = Corner.TOP_LEFT;     break;
+							case 1:    p = Corner.BOTTOM_LEFT;  break;
+							case 2:    p = Corner.TOP_RIGHT;    break;
+							case 3:    p = Corner.BOTTOM_RIGHT; break;
+							default:   p = Corner.NONE;         break;
+						}
+					}
+					pieces[y][x] = p;
+					/* save the index */
+					if(p == corner) {
+						if(my >= stones) throw new Exception("my >= stones");
+						myStones[my].x = x;
+						myStones[my].y = y;
+						my++;
 					}
 				}
-				pieces[y][x] = p;
-				/* save the index */
-				if(my < stones && p == corner) {
-					myStones[my].x = x;
-					myStones[my].y = y;
-					my++;
-				}
 			}
+			for(int i = 0; i < my; i++) {
+				System.err.print(pt2string(myStones[i]) + ";");
+			}
+			System.err.print("(" + my + ")\n");
+			if(my != stones) throw new Exception("my != stones");
+		} catch (Exception e) {
+			System.err.print("No way! " + e.getMessage() + ".\n");
 		}
-		for(int i = 0; i < my; i++) {
-			System.err.print(pt2string(myStones[i]) + ";");
-		}
-		System.err.print("(" + my + ")\n");
 	}
 
 	/** prints the board */
@@ -219,12 +242,22 @@ public class s110121860Player extends Player {
 	}
 
 	/** return the best moves for each player based on hill climbing */
+	LinkedList<CCMove> bestMove(final Point start) {
+		try {
+			if(start == null || pieces[start.y][start.x] != corner) throw new Exception("error in bestMove");
+			
+		} catch (Exception e) {
+			System.err.print("No way! " + e.getMessage() + ".\n");
+		}
+		return null;
+	}
 
 	/** the agent */
 	public Move chooseMove(Board theboard) {
 		Point from, to;
 		CCMove best = null;
-		/* although you are allowed to pass in Halma, the game doesn't let you :[ */
+		/* although you are allowed to pass in Halma, the game doesn't let
+		 you :[; therefore we allow negaive moves */
 		int bestDelta = Integer.MIN_VALUE /* 0 */, delta;
 
 		/* assert input */
@@ -234,9 +267,7 @@ public class s110121860Player extends Player {
 		if(!isInitialised) initialise();
 
 		/* is doing a move? (this is a bad system :[ ) */
-		if(isMoving) {
-			
-		}
+		for(CCMove move : storedMove) System.err.print("");
 
 		/* this is sketchy */
 		CCBoard board = (CCBoard)theboard;
@@ -273,13 +304,13 @@ public class s110121860Player extends Player {
 				bestDelta = delta;
 				best = move;
 				System.err.print("the best so far ");
+				System.err.print(move2string(move) + " [" + delta + "]\n");
 			}
-			System.err.print(pt2string(from) + " -> " + pt2string(to) + " [" + delta + "]\n");
 		}
 
 		/* FIXME: uhhh, the null move is a very valid move, but it balks;
 		 hopefully it doesn't come up */
-		return best;
+		return (best == null) ? goNowhere : best;
 	}
 
 	/** "Exception in s110121860.s110121860Player.choseMove()
