@@ -7,6 +7,9 @@ package s110121860;
 import java.util.LinkedList;
 import java.util.Stack;
 import java.lang.Exception;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map.Entry;
 
 /* import game stuff */
 import java.util.ArrayList; /* used in CCBoard as a return type */
@@ -40,8 +43,7 @@ public class s110121860Player extends Player {
 		}*/
 	};
 
-	/* the board is n x n
-	 assert(size >= alphabet.length()) */
+	/* the board is n x n */
 	private static final int size   = CCBoard.SIZE /* 16 */;
 	private static final int stones = 13;
 	/* fixme: probably be better as an ArrayList */
@@ -74,21 +76,21 @@ public class s110121860Player extends Player {
 	private CCMove goNowhere;
 
 	/** agent constructor with no args */
-	public s110121860Player() throws Exception {
+	public s110121860Player() {
 		this("110121860");
 	}
 
 	/** agent constructor
 	 @param s the name (I assume?) */
-	public s110121860Player(String s) throws Exception {
+	public s110121860Player(String s) {
 		super(s);
-		if(size >= alphabet.length()) throw new Exception("size < alphabet.length()");
 		for(int i = 0; i < stones; i++) myStones[i] = new Point();
 	}
 
 	/** @param pt
 	 @return the letter mapped though some crazy transformation as a string */
 	private static String pt2string(final Point pt) {
+		assert(size < alphabet.length());
 		if(pt == null) return "(null)";
 		if(pt.x < 0 || pt.y < 0 || pt.x >= size || pt.y >= size) return "(range)";
 		return "" + alphabet.charAt(pt.y) + (pt.x+1);
@@ -184,7 +186,7 @@ public class s110121860Player extends Player {
 	public Board createBoard() {
 		/* I have no idea what this does or why it's here */
 		System.err.print("createBoard FTW!!!!\n");
-		return new CCBoard();
+		return new DDBoard();
 	}
 
 	/** chooseMove calls this each time */
@@ -193,41 +195,37 @@ public class s110121860Player extends Player {
 		Corner p;
 		int my = 0;
 
-		try {
-			for(int y = 0; y < size; y++) {
-				for(int x = 0; x < size; x++) {
-					a.x = x;
-					a.y = y;
-					/* getPieces is good but it allocates memory every time */
-					if((piece = board.getPieceAt(a)) == null) {
-						p = Corner.NONE;
-					} else {
-						switch(piece) {
-							case 0:    p = Corner.TOP_LEFT;     break;
-							case 1:    p = Corner.BOTTOM_LEFT;  break;
-							case 2:    p = Corner.TOP_RIGHT;    break;
-							case 3:    p = Corner.BOTTOM_RIGHT; break;
-							default:   p = Corner.NONE;         break;
-						}
-					}
-					pieces[y][x] = p;
-					/* save the index */
-					if(p == corner) {
-						if(my >= stones) throw new Exception("my >= stones");
-						myStones[my].x = x;
-						myStones[my].y = y;
-						my++;
+		for(int y = 0; y < size; y++) {
+			for(int x = 0; x < size; x++) {
+				a.x = x;
+				a.y = y;
+				/* getPieces is good but it allocates memory every time */
+				if((piece = board.getPieceAt(a)) == null) {
+					p = Corner.NONE;
+				} else {
+					switch(piece) {
+						case 0:    p = Corner.TOP_LEFT;     break;
+						case 1:    p = Corner.BOTTOM_LEFT;  break;
+						case 2:    p = Corner.TOP_RIGHT;    break;
+						case 3:    p = Corner.BOTTOM_RIGHT; break;
+						default:   p = Corner.NONE;         break;
 					}
 				}
+				pieces[y][x] = p;
+				/* save the index */
+				if(p == corner) {
+					assert(my < stones);
+					myStones[my].x = x;
+					myStones[my].y = y;
+					my++;
+				}
 			}
-			for(int i = 0; i < my; i++) {
-				System.err.print(pt2string(myStones[i]) + ";");
-			}
-			System.err.print("(" + my + ")\n");
-			if(my != stones) throw new Exception("my != stones");
-		} catch (Exception e) {
-			System.err.print("No way! " + e.getMessage() + ".\n");
 		}
+		for(int i = 0; i < my; i++) {
+			System.err.print(pt2string(myStones[i]) + ";");
+		}
+		System.err.print("(" + my + ")\n");
+		assert(my == stones);
 	}
 
 	/** prints the board */
@@ -244,7 +242,7 @@ public class s110121860Player extends Player {
 	}
 
 	/** return the best moves for each player based on hill climbing */
-	LinkedList<CCMove> bestMove(final Point start) {
+	LinkedList<CCMove> bestSequence(final Point start) {
 		int stored = 0;
 		int currentBest;
 		int x, y;
@@ -287,10 +285,11 @@ public class s110121860Player extends Player {
 		if(!isInitialised) initialise();
 
 		/* is doing a move? (this is a bad system :[ ) */
-		for(CCMove move : storedMove) System.err.print("");
+		for(CCMove move : storedMove) System.err.print(move2string(move) + ";");
+		System.err.print("<- stored moves (" + storedMove.length + ")\n");
 
 		/* this is sketchy */
-		CCBoard board = (CCBoard)theboard;
+		DDBoard board = (DDBoard)theboard;
 
 		/* get the pieces (by going a long way around) */
 		getPieces(board);
@@ -318,8 +317,6 @@ public class s110121860Player extends Player {
 			/* signals we can stop */
 			if(from == null || to == null) {
 				delta = 0;
-				//System.err.print("s110121860Player: ridiculous!!!\n");
-				//return goNowhere;
 			} else {
 				delta = this.hill[to.y][to.x] - this.hill[from.y][from.x];
 			}
@@ -332,7 +329,7 @@ public class s110121860Player extends Player {
 		}
 
 		/* FIXME: uhhh, the null move is a very valid move, but it balks;
-		 hopefully it doesn't come up */
+		 hopefully it doesn't come up (ie no moves possible) */
 		return (best == null) ? goNowhere : best;
 	}
 
@@ -341,6 +338,83 @@ public class s110121860Player extends Player {
 	public Move choseMove() {
 		System.err.print("s110121860Player: this is CRAZY!!!\n");
 		return null;
+	}
+
+	/* these go with the class Sequence */
+	private static boolean isVisited[][] = new boolean[size][size];
+	protected CCMove consider              = new CCMove(playerID, new Point(), new Point());
+
+	/** a sequence of CCMove moves */
+	class Sequence {
+
+		private Sequence parent;
+		private int height;
+		private Point here      = new Point();
+		private CCMove buffer[] = new CCMove[8];
+		private CCMove move[]   = new CCMove[8];
+
+		/** cool sol'n but needs constant malloc/free;
+		 fixme: have a pool of Sequences that gets allocated once */
+		private Sequence(Sequence parent, Point point) {
+			/* alloc memory :[ */
+			for(int i = 0; i < 8; i++) buffer[i] = new CCMove(playerID, new Point(), new Point());
+			/* fill in */
+			this.parent = parent;
+			/* visit it */
+			this.here.x = point.x;
+			this.here.y = point.y;
+			this.height = hill[here.y][here.x];
+			/* get neighbors */
+			isVisited[here.y][here.x] = true;
+			getAdjacent(point, 2);
+			/* recurse in all (8) directions */
+			for(int i = 0; i < 8; i++) {
+				if(move[i] == null) continue;
+				new Sequence(this, move[i].getTo());
+			}
+		}
+
+		/** which move is best starting at start
+		 @param start
+		 @return a sequence of moves */
+		public static int best(Point start) {
+
+			/* clear out all isVisited */
+			for(int y = 0; y < size; y++) {
+				for(int x = 0; x < size; x++) {
+					isVisited[y][x] = false;
+				}
+			}
+
+			return new Sequence(null, start);
+		}
+
+		/** fills the move[]
+		 @param from  the point that you want the adjecent
+		 @param steps the 'steps' neighbor */
+		private void getAdjacent(final Point from, final int steps) {
+			int dx, dy;
+
+			for(int i = 0; i < 8; i++) {
+				dx = moves[i][0];
+				dy = moves[i][1];
+				a.x = from.x + steps * dx;
+				a.y = from.y + steps * dy;
+				consder.from = from;
+				consder.to   = a;
+				if(isLegal(consder) && !isVisited[a.y][a.x]) {
+					move[i] = buffer[i];
+					move[i].from.x = from.x;
+					move[i].from.y = from.y;
+					move[i].x = a.x;
+					move[i].y = a.y;
+					isVisited[a.y][a.x] = true;
+				} else {
+					move[i] = null;
+				}
+			}
+
+		}
 	}
 
 	class Jump {
@@ -391,10 +465,71 @@ public class s110121860Player extends Player {
 	}
 }
 
-/** no */
-/*class P2D extends Point {
-	@Override
-	public String toString() {
-		return "(" + x + "," + y + ")";
+/* sometimes you just want to programme in C, you know . . . */
+class DDBoard extends CCBoard {
+
+	private static final int[][] moves= {{1,1}, {1,0}, {1,-1}, {0,-1}, {-1,-1}, {-1,0}, {-1,1}, {0,1}};
+
+	public DDBoard() {
+		super();
+		System.err.print("DDBoard!!!!!!!!!!!!!!!\n");
 	}
-}*/
+	@Override
+	public Object clone() {
+		return (DDBoard)super.clone();
+		//return new DDBoard((HashMap<Point, Integer>) board.clone(), getTurnsPlayed(), getWinner(), getTurn(), getLastMoved(), (HashSet<Point>) lastPoints.clone());
+	}
+
+	/**
+	 * Get all legal move for the current state of the board. 
+	 * If the player is allowed to end his turn, then a move with from=null and to=null is included.
+	 * NOTE: this will give moves for any player regardless of who calls this method.
+	 * @return A list of all allowed moves for the current state of the board
+	 * (Neil: ALL the moves)
+	 */
+	public ArrayList<CCMove> getLegalMoves(){
+		ArrayList<CCMove> legalMoves= new ArrayList<CCMove>(10);
+		Point lastMovedInTurn = getLastMoved();
+
+		System.err.print("Yo!\n");
+		if(lastMovedInTurn != null){
+			// if last move was a hop allow termination
+			legalMoves.add(new CCMove(getTurn(), null, null));
+			
+			// allow all further hops with the same piece
+			Point from= lastMovedInTurn;
+			for(int i=0;i<8; i++){
+				int dx = moves[i][0];
+				int dy = moves[i][1];
+				Point to=new Point(from.x+2*dx, from.y+2*dy);
+				CCMove move=new CCMove(getTurn(), from, to);
+				if(isLegal(move))
+					legalMoves.add(move);
+			}
+		}else{
+			for( Entry<Point, Integer> entry: board.entrySet()){
+				addLegalMoveForPiece(entry.getKey(), entry.getValue().intValue(), legalMoves);
+			}
+			if(checkIfWin(getTurn()))
+				legalMoves.add(new CCMove(getTurn(), null, null));
+		}
+		return legalMoves;
+	}
+	/** (private access, copy here -Neil)
+	 * Check if all player ID has all his pieces in his target corner
+	 * @param ID player ID
+	 * @return true if all pieces of player ID is in his target corner
+	 */
+	private boolean checkIfWin(int ID){
+		assert(ID<4);
+		boolean win=true;
+		int base_id= ID^3;
+		Integer IDInteger= new Integer(ID);
+		
+		for(Point p: bases[base_id]){
+			win &= IDInteger.equals(board.get(p));
+		}
+		
+		return win;
+	}
+}

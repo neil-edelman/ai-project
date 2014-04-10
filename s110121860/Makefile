@@ -38,14 +38,14 @@ $(BDIR)/%.class: $(SDIR)/%.java
 	@mkdir -p $(BDIR)
 	$(CC) $(CF) -c $? -o $@
 
-.PHONY: setup clean backup sever launch kill
+.PHONY: setup clean backup sever client kill
 
 server:
 	java -cp ../jar/projectsrc.jar boardgame.Server -b halma.CCBoard -t 300000 &
 #	sleep 2s
 #	java -cp ../jar/projectsrc.jar:./bin boardgame.Client s110121860.s110121860Player
 
-launch:
+client:
 	java -cp ../jar/projectsrc.jar:./bin boardgame.Client s110121860.s110121860Player
 	
 kill:

@@ -25,3 +25,10 @@
 81	110121860	random	random	random	Player-1	random	100	game00081.log	
 83	110121860	random	random	random	Player-1	random	100	game00083.log	
 89	110121860	random	random	random	Player-0	110121860	100	game00089.log	
+103	random	random	110121860	random	Player-1	random	100	game00103.log	
+109	110121860	Human	Human	Human	Player-1	Human	0	game00109.log	ILLEGAL MOVE: Player 0 move from (B,1) to (D,3)
+110	110121860	Human	Human	Human	Player-1	Human	0	game00110.log	ILLEGAL MOVE: Player 0 move from (B,1) to (D,3)
+111	110121860	Human	Human	Human	Player-1	Human	0	game00111.log	ILLEGAL MOVE: Player 0 move from (C,2) to (E,4)
+112	110121860	Human	Human	Human	Player-1	Human	0	game00112.log	ILLEGAL MOVE: Player 0 move from (B,1) to (D,3)
+113	110121860	random	random	random	Player-1	random	0	game00113.log	ILLEGAL MOVE: Player 0 move from (B,1) to (D,3)
+118	110121860	Human	Human	Human	Player-1	Human	0	game00118.log	ILLEGAL MOVE: Player 0 move from (B,1) to (D,3)
