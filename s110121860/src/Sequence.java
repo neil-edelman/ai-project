@@ -214,7 +214,7 @@ class Sequence implements Iterable {
 		/* i.next() is Object? but that doesn't make any sense, clearly the docs
 		 say: Iterator<E>: E next() */
 		while(i.hasNext()) s += s110121860Player.move2string((CCMove)i.next()) + "; ";
-		s += "done";
+		s += "~";
 		return s;
 	}
 }

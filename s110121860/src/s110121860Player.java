@@ -7,6 +7,7 @@ package s110121860;
 import java.lang.Exception;
 import java.util.ArrayList; /* used in CCBoard as a return type */
 import java.awt.Point;      /* used in CCMove as a return type */
+import java.util.Iterator;
 
 /* import game stuff */
 import boardgame.Board;
@@ -27,12 +28,17 @@ public class s110121860Player extends Player {
 	private static final int param_distance      = 1;
 	private static final int param_bonus_endzone = 10;
 
+	/* no move */
+	private static CCMove done;
+
 	/* convenient things */
 	private boolean isInitialised = false;
+	private boolean isEndingTurn = false;
 	private CCBoard board; /* our copy */
 	private int constHill[][]  = new int[size][size];
 	private int hill[][]       = new int[size][size];
 	private Sequence[] myJumps = new Sequence[stones];
+	private Iterator<CCMove> jumping;
 
 	/** agent constructor with no args */
 	public s110121860Player() {
@@ -49,46 +55,76 @@ public class s110121860Player extends Player {
 	 @param theboard the CCBoard as a Board
 	 @return the next CCMove as a Move */
 	public Move chooseMove(Board theboard) {
-		Point from, to, myStone;
+		/* the optimum */
 		CCMove best = null;
-		int height;
+		Point from, to, myStone, myClosest = null;
 		/* although you are allowed to pass in Halma, the game doesn't let
-		 you :[; therefore we allow negative moves */
-		int bestDelta = Integer.MIN_VALUE /* 0 */, delta;
+		 you :[; therefore we allow negative moves
+		 (otherwise we would set them to zero) */
+		int bestDeltaJump = Integer.MIN_VALUE;
+		int bestDeltaJumpIndex = 0;
+		int bestDelta     = Integer.MIN_VALUE;
+		int delta, baseHeight, endHeight;
 
 		assert(theboard != null);
 
-		/* this happens once the player_ids are set */
-		if(!isInitialised) initialise();
+		System.err.println("\n----\n" + this);
 
-		/* whoa, polymorism */
-		CCBoard board = (CCBoard)theboard; //DDBoard board = (DDBoard)theboard;
+		/* this happens once the player_ids are set (chooseMove is called) */
+		if(!isInitialised) {
+			try {
+				initialise();
+			} catch(Exception e) {
+				System.err.print("Error: " + e.getMessage() + "\n");
+				return null;
+			}
+		}
 
-		/* update legal moves on this portion of the Sequence
-		 (don't be fooled by the get) */
+		/* in the middle of jumping! */
+		if(jumping != null) {
+			/* cross my fingers */
+			if(jumping.hasNext()) {
+				System.err.print("Jumping on a pre-determined path!\n");
+				best = jumping.next();
+			} else {
+				System.err.print("Stopping!\n");
+				jumping = null;
+				best = done;
+			}
+			System.err.print("Sending at jump: " + best + ".\n----\n\n");
+			return best;
+		}
+
+		/* update legal moves on this portion of the Sequence (whoa, polymorism) */
+		CCBoard board = (CCBoard)theboard;
 		ArrayList<CCMove> moves = board.getLegalMoves();
 		ArrayList<Point>  myStones = board.getPieces(playerID);
+		
+		/* we just jumped one square, we should end our turn */
+		if(isEndingTurn) {
+			isEndingTurn = false;
+			System.err.print("It's the end of our turn!?\n");
+			if(moves.get(0).getTo() != null) {
+				System.err.print("No! I'm confused, but will carry on.\n");
+			} else {
+				System.err.print("Sending at endturn: " + done + ".\n----\n\n");
+				return done;
+			}
+		}
 
-		/* stroke the hill () */
+		/* stroke the hill */
 		for(int y = 0; y < size; y++) {
 			for(int x = 0; x < size; x++) {
 				hill[y][x] = constHill[y][x];
 			}
 		}
-
-		System.err.println(this);
-
-		/* do jump moves! */
-		for(int i = 0; i < stones; i++) {
-			myStone = myStones.get(i);
-			myJumps[i] = Sequence.find(myStone, hill, board);
-			height = myJumps[i].getHighest();
-			System.err.print("my #"+i+" is at " + pt2string(myStone) + " and has max height " + height + " going though " + myJumps[i] + ".\n");
-		}
-
-		System.err.print("Choose move for player " + id2string(playerID) + " (#" + playerID + "):\n");
+		for(Point p : myStones) if(hill(p) > hill(myClosest)) myClosest = p;
+		augmentHill();
 
 		/* output */
+		System.err.println("Closest: " + pt2string(myClosest) + "\n");
+
+		/* do single moves! */
 		for(CCMove move : moves) {
 			from = move.getFrom();
 			to   = move.getTo();
@@ -98,31 +134,70 @@ public class s110121860Player extends Player {
 			} else {
 				delta = this.hill[to.y][to.x] - this.hill[from.y][from.x];
 			}
+			/* keep track of the max */
 			if(bestDelta < delta) {
 				bestDelta = delta;
 				best = move;
-				System.err.print("the best so far ");
-				System.err.print(move2string(move) + " [" + delta + "]\n");
+				System.err.print("The current best delta is (" + move2string(move) + ") at " + delta + ".\n");
 			}
 		}
 
-		/* FIXME: uhhh, the null move is a very valid move, but it balks;
-		 hopefully it doesn't come up (ie no moves possible) */
-		return (best == null) ? new CCMove(playerID, null, null) : best;
+		/* do jump moves! */
+		for(int i = 0; i < stones; i++) {
+			myStone    = myStones.get(i);
+			baseHeight = hill(myStone);
+			myJumps[i] = Sequence.find(myStone, hill, board);
+			endHeight  = myJumps[i].getHighest();
+			delta      = endHeight - baseHeight;
+			System.err.print("my #"+i+" is at " + pt2string(myStone) + " and has delta " + delta + " going " + myJumps[i] + ".\n");
+			if(bestDeltaJump < delta) {
+				bestDeltaJump      = delta;
+				bestDeltaJumpIndex = i;
+			}
+		}
+		System.err.print("The best delta_jump is #" + bestDeltaJumpIndex + " at " + bestDeltaJump + ".\n");
+
+		/* we have two choices */
+		if(bestDeltaJump > bestDelta && bestDeltaJump > 0) {
+			System.err.print("The best delta is a jump!\n");
+			jumping = myJumps[bestDeltaJumpIndex].iterator();
+			assert(jumping.hasNext());
+			best = jumping.next();
+		} else {
+			/* it is concivable that getLegalMoves returns empty, then we would be
+			 up the creek, but hopefully it's good */
+			if(best == null) best = done;
+			isEndingTurn = true;
+		}
+
+		System.err.print("Sending at bottom: " + best + ".\n----\n\n");
+		return best;
 	}
 
 	/** we don't have the player id to fill this out at first, but it must be
 	 filled out before we can play */
-	private void initialise() {
+	private void initialise() throws Exception {
+		Player p;
 		int metric, manhattan;
-		Point a = new Point();
-		Point b = new Point();
 
+		/* generate a flag that tells the computer we're done */
+		done = new CCMove(playerID, null, null);
+		/* fixme! I don't have the internet :[ */
+		//p = Player(playerID);
+		switch(playerID) {
+			case 0: p = Player.TOP_LEFT; break;
+			case 1: p = Player.BOTTOM_LEFT; break;
+			case 2: p = Player.TOP_RIGHT; break;
+			case 3: p = Player.BOTTOM_RIGHT; break;
+			default: throw new Exception("player ID was out of range");
+		}
+		Point b = p.oppositePoint();
+		Point a = new Point();
 		/* the distance to the goal */
 		for(int y = 0; y < size; y++) {
 			for(int x = 0; x < size; x++) {
-				b.x = x;
-				b.y = y;
+				a.x = x;
+				a.y = y;
 				metric    = metric(a, b);
 				manhattan = manhattan(a, b);
 				/* the metric */
@@ -139,6 +214,12 @@ public class s110121860Player extends Player {
 
 		System.err.print("Cool player on " + id2string(playerID) + " allied with " + id2string(playerID ^ 3) + ".\n");
 
+	}
+
+	/** this sets the hill to be a little bit steeper in certain points
+	 todo */
+	void augmentHill() {
+		
 	}
 
 	/** do something mysterious */
@@ -167,9 +248,12 @@ public class s110121860Player extends Player {
 		return d;
 	}
 
+	/** lazy */
+	private int hill(Point p) { return p != null ? hill[p.y][p.x] : Integer.MIN_VALUE; }
+
 	/** prints the board (the right way around) */
 	public String toString() {
-		return "s110121860Player is " + playerID + " on the board:\n" + board2string(board);
+		return "s110121860Player is " + id2string(playerID) + " #" + playerID + " on the board:\n" + board2string(board);
 	}
 
 	/** @param pt
@@ -188,7 +272,8 @@ public class s110121860Player extends Player {
 		return m.getPlayerID() + ":" + pt2string(m.getFrom()) + "->" + pt2string(m.getTo());
 	}
 
-	/** I was fed up with it being backwards
+	/** an alternative representation where it equals the one shown graphically
+	 (I was getting confused)
 	 @param board
 	 @return the string representation */
 	public static String board2string(final CCBoard board) {
@@ -201,8 +286,8 @@ public class s110121860Player extends Player {
 		Integer piece;
 		for(int y = 0; y < size; y++) {
 			for(int x = 0; x < size; x++) {
-				p.x = x;
-				p.y = y;
+				p.x = y;
+				p.y = x;
 				piece = board.getPieceAt(p);
 				/* autoboxing */
 				s += (piece == null) ? "-" : piece;
@@ -212,6 +297,37 @@ public class s110121860Player extends Player {
 
 		return s;
 	}
+
+	/* fixme: I'm messing it up */
+	protected enum Player {
+		TOP_LEFT(0),
+		BOTTOM_LEFT(1),
+		TOP_RIGHT(2),
+		BOTTOM_RIGHT(3);
+
+		int v;
+	
+		private Player(int v) {
+			this.v = v;
+		}
+
+		int value() {
+			return v;
+		}
+
+		Point oppositePoint() {
+			switch(v) {
+				case 0: return new Point(size - 1, size - 1);
+				case 1: return new Point(       0, size - 1);
+				case 2: return new Point(size - 1, 0);
+				case 4: return new Point(       0, 0);
+			}
+			return null;
+		}
+		/*public Enum<Player> player(int player) {
+			return player;
+		}*/
+	};
 
 	/** @param id a player id
 	 @return string representing where the player is sitting */
