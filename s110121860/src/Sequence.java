@@ -1,14 +1,17 @@
+/** @author Neil */
+
 package s110121860;
 /* package halma.CCMove; <- "is not public in halma.CCMove; cannot be accessed
  from outside package;" java packages; why do you have to be so confusing? */
 
 import java.awt.Point;
+//import java.util.LinkedList;
 
 import halma.CCBoard;
 import halma.CCMove;
 
-/** a sequence of CCMove moves */
-class Sequence {
+/** a sequence of CCMove moves and stuff */
+class Sequence implements Iterable {
 
 	/* constants */
 	private static final int size      = CCBoard.SIZE /* 16 */;
@@ -17,56 +20,66 @@ class Sequence {
 	/* "globals" */
 	private static boolean isVisited[][] = new boolean[size][size];
 	private static Point to              = new Point();
+	private static Point mid             = new Point();
 	private static int playerID;
 	private static CCBoard board;
 	private static int hill[][];
+	//private static LinkedList<CCMove> path = new LinkedList<CCMove>();
+	private static Sequence highest;
 
 	/* class variables */
 	private Sequence parent;
+	private int dirFromParent;
 	private int height;
-	private Point here      = new Point();
+	private Point here = new Point();
 	/* private CCMove buffer[] = new CCMove[8]; :[ */
-	private CCMove move[]   = new CCMove[8];
+	private CCMove move[] = new CCMove[8];
 
 	/** cool sol'n but needs constant malloc/free;
-	 fixme: have a pool of Sequences that gets allocated once */
-	private Sequence(final Sequence parent, final Point point) {
+	 fixme: have a pool of Sequences */
+	private Sequence(final Sequence parent, int dirFromParent, final Point point) {
 		/* allocate */
 		//for(int i = 0; i < 8; i++) buffer[i] = new CCMove(playerID, new Point(), new Point()); :[
 		/* fill in */
 		this.parent = parent;
+		this.dirFromParent = dirFromParent;
 		/* visit it */
 		this.here.x = point.x;
 		this.here.y = point.y;
-		this.height = 0;//hill[here.y][here.x];
+		this.height = hill[here.y][here.x];
 		/* get neighbors (sets move[]) */
 		isVisited[here.y][here.x] = true;
 		getAdjacent(point, 2);
-		/* recurse in all (8) directions */
+		/* recurse in all (8) directions; fixme: bfs is way nicer */
 		for(int i = 0; i < 8; i++) {
 			if(move[i] == null) continue;
-			new Sequence(this, move[i].getTo());
+			//System.err.print("new Sequence("+this+", "+move[i].getTo()+");\n");
+			new Sequence(this, i, move[i].getTo());
 		}
+		/* is it the highest we've seen? */
+		if(highest == null || highest.height < height) highest = this;
 	}
-	
-	/** return the bfs with all the sequences starting at a peice
+
+	/** return the bfs (fixme) with all the sequences starting at a peice
 	 @param start
 	 @param player_id the id of the player
 	 @return a sequence of moves */
-	public static Sequence find(Point start, final int values[][], final CCBoard ccboard) {
+	public static Sequence find(Point start, final int hill[][], final CCBoard board) {
 		Integer player;
 
 		assert(start != null);
-		assert(values != null);
-		assert(ccboard != null);
+		assert(hill != null);
+		assert(board != null);
 
 		/* autoboxing */
-		Integer player_id = ccboard.getPieceAt(start);
-		assert(player_id != null && player_id >= 0 && player_id < CCBoard.NUMBER_OF_PLAYERS);
+		Integer playerID = board.getPieceAt(start);
+		assert(playerID != null && playerID >= 0 && playerID < CCBoard.NUMBER_OF_PLAYERS);
 
-		playerID = player_id;
-		board    = ccboard;
-		hill     = values;
+		Sequence.playerID = playerID;
+		Sequence.board    = board;
+		Sequence.hill     = hill;
+		//System.err.print("id#"+playerID+" board \\/\n"+board+"start: "+start+"\n");
+
 		/* clear out all isVisited */
 		for(int y = 0; y < size; y++) {
 			for(int x = 0; x < size; x++) {
@@ -74,9 +87,22 @@ class Sequence {
 			}
 		}
 
-		return new Sequence((Sequence)null, start);
+		/* reset highest */
+		highest = null;
+
+		/* do searching! */
+		return new Sequence((Sequence)null, 0, start);
 	}
-	
+
+	/** @return the highest jump we did on the last find() */
+	public static int highest() {
+		if(highest == null) return Integer.MIN_VALUE; // shouldn't happen
+		return highest.height;
+	}
+
+	/** @return iterator to the highest peak */
+	public Iterator . . . muhahahahahahaha
+
 	/** fills the move[]
 	 @param from  the point that you want the adjecent
 	 @param steps the 'steps' neighbor */
@@ -91,19 +117,63 @@ class Sequence {
 			to.y = from.y + steps * dy;
 			/* the only way to access it is from the constructor :[ */
 			consider = new CCMove(playerID, from, to);
-			if(board.isLegal(consider) && !isVisited[to.y][to.x]) {
+			/*board.isLegal(consider) <- useless */
+			if(isLegal(consider) && !isVisited[to.y][to.x]) {
 				/*move[i] = buffer[i];
 				move[i].from.x = from.x;
 				move[i].from.y = from.y;
 				move[i].x = to.x;
 				move[i].y = to.y; :[ */
-				move[i] = new CCMove(playerID, from, to); /* :{{{ */
+				move[i] = new CCMove(playerID, new Point(from), new Point(to)); /* :{{{ */
 				isVisited[to.y][to.x] = true;
 			} else {
 				move[i] = null;
 			}
 		}
-		
+	}
+
+	/** maybe this works */
+	private boolean isLegal(final CCMove m) {
+		if(m == null) return false;
+		Point to = m.getTo();
+		if(to.x < 0 || to.y < 0 || to.x >= size || to.y >= size) {
+			//System.err.print("["+s110121860Player.move2string(m)+" outofbounds]");
+			return false;
+		}
+		/* we want the to position to be empty */
+		if(board.board.containsKey(to)) {
+			//System.err.print("["+s110121860Player.move2string(m)+" blocked]");
+			return false;
+		}
+		/* we assume the from is okay */
+		Point from = m.getFrom();
+		/* we have to have a piece in the centre */
+		mid.x = from.x + to.x >> 1;
+		mid.y = from.y + to.y >> 1;
+		if(!board.board.containsKey(mid)) {
+			//System.err.print("["+s110121860Player.move2string(m)+" nohop]");
+			return false;
+		}
+		/* the game does not allow going out the opposing team's base; really?
+		 we could get easily trapped! */
+		boolean toIn   = board.bases[playerID ^ 3].contains(to);
+		boolean fromIn = board.bases[playerID ^ 3].contains(from);
+		if(!(!fromIn || (toIn && fromIn) )) {
+			//System.err.print("["+s110121860Player.move2string(m)+" noleave]");
+			return false;
+		}
+		/* it must be ones turn */
+		if(m.getPlayerID() != playerID /* or we assume board.getTurn() */) {
+			//System.err.print("["+s110121860Player.move2string(m)+" notturn]");
+			return false;
+		}
+		return true;
+	}
+
+	public String toString() {
+		String s = "";
+		for(int i = 0; i < 8; i++) s += "(" + moves[i][0] + "," + moves[i][1] + "): " + s110121860Player.move2string(move[i]) + "|";
+		return s;
 	}
 }
 

@@ -70,6 +70,7 @@ public class s110121860Player extends Player {
 	private int hill[][]      = new int[size][size];
 	private LinkedList<CCMove> nextMoves = new LinkedList<CCMove>(); /* nextMoves picks from storedMove */
 	private Point[] myStones  = new Point[stones];
+	private Sequence[] mySequences = new Sequence[stones];
 
 	/* used at the end of jumps */
 	private CCMove goNowhere;
@@ -88,7 +89,7 @@ public class s110121860Player extends Player {
 
 	/** @param pt
 	 @return the letter mapped though some crazy transformation as a string */
-	private static String pt2string(final Point pt) {
+	public static String pt2string(final Point pt) {
 		assert(size < alphabet.length());
 		if(pt == null) return "(null)";
 		if(pt.x < 0 || pt.y < 0 || pt.x >= size || pt.y >= size) return "(range)";
@@ -97,14 +98,14 @@ public class s110121860Player extends Player {
 
 	/** @param m move
 	 @return the string representation of a move */
-	private static String move2string(final CCMove m) {
+	public static String move2string(final CCMove m) {
 		if(m == null) return "(null)";
-		return pt2string(m.getFrom()) + "->" + pt2string(m.getTo());
+		return m.getPlayerID() + ":" + pt2string(m.getFrom()) + "->" + pt2string(m.getTo());
 	}
 
 	/** @param a
 	 @param b
-	 @return the distance according to the metric */
+	 @return the distance according to the metric of one-square jumping */
 	private static int metric(final Point a, final Point b) {
 		return Math.max(Math.abs(b.x - a.x), Math.abs(b.y - a.y));
 	}
@@ -172,8 +173,6 @@ public class s110121860Player extends Player {
 		}
 		/* move buffer */
 		for(int i = 0; i < storedMoves; i++) storedMove[i] = new CCMove(playerID, new Point(), new Point());
-		/* the Sequence now has enough info to store all it's stuff */
-		//Sequence.initialise(playerID);
 		/* completed */
 		isInitialised = true;
 
@@ -183,9 +182,8 @@ public class s110121860Player extends Player {
 
 	/** do something mysterious */
 	public Board createBoard() {
-		/* I have no idea what this does or why it's here */
 		System.err.print("createBoard FTW!!!!\n");
-		return new CCBoard();//DDBoard();
+		return new CCBoard();
 	}
 
 	/** chooseMove calls this each time */
@@ -198,7 +196,9 @@ public class s110121860Player extends Player {
 			for(int x = 0; x < size; x++) {
 				a.x = x;
 				a.y = y;
-				/* getPieces is good but it allocates memory every time */
+				/* do 16 x 16 raytracing; the board is just a lut, so w/o
+				 hardware acceleration, I think this is faster then erasing it
+				 and putting the pieces (fixme: test this) */
 				if((piece = board.getPieceAt(a)) == null) {
 					p = Corner.NONE;
 				} else {
@@ -241,35 +241,6 @@ public class s110121860Player extends Player {
 		return s;
 	}
 
-	/** return the best moves for each player based on hill climbing */
-	LinkedList<CCMove> bestSequence(final Point start) {
-		int stored = 0;
-		int currentBest;
-		int x, y;
-
-		//board.isLegal(CCMove);
-		try {
-			/*int dx = moves[i][0];
-			int dy = moves[i][1];
-			Point to=new Point(from.x+2*dx, from.y+2*dy);
-			CCMove move=new CCMove(getTurn(), from, to);
-			if(isLegal(move))
-				legalMoves.add(move);
-			
-			if(start == null || pieces[start.y][start.x] != corner) throw new Exception("doesn't make sense in bestMove");
-			x = start.x;
-			y = start.y;
-			if(x+1 < size) {
-				if(pieces[y][x+1] == Corner.NONE) {
-					pieces[y][x+1] = Corner.EXPLORED;
-				}
-			}*/
-		} catch (Exception e) {
-			System.err.print("No way! " + e.getMessage() + ".\n");
-		}
-		return null;
-	}
-
 	/** the agent */
 	public Move chooseMove(Board theboard) {
 		Point from, to;
@@ -301,7 +272,12 @@ public class s110121860Player extends Player {
 
 		System.err.println(this);
 
-		Sequence zero = Sequence.find(myStones[0], hill, board);
+		/* do jump moves! */
+		for(int i = 0; i < stones; i++) {
+			mySequences[i] = Sequence.find(myStones[i], hill, board);
+			height = Sequence.highest();
+			System.err.print("myStones["+i+"] is at " + pt2string(myStones[i]) + " and has Sequence " + mySequences[i] + " with height " + hight + ".\n");
+		}
 
 		System.err.print("Choose move for player " + corner + " (#" + playerID + "):\n");
 

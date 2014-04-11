@@ -14,7 +14,7 @@ OBJS  := $(patsubst %,$(BDIR)/%.class,$(FILES))
 SRCS  := $(patsubst %,$(SDIR)/%.java,$(FILES))
 
 CC   := javac
-CF   := -g:none -O -verbose -d $(BDIR) $(SDIR)/*.java -Xlint:unchecked -Xlint:deprecation -cp ../jar/projectsrc.jar:bin/s110121860/s110121860Player.class
+CF   := -g:none -O -d $(BDIR) $(SDIR)/*.java -Xlint:unchecked -Xlint:deprecation -cp ../jar/projectsrc.jar:bin/s110121860/s110121860Player.class #-verbose (it's not kidding)
 OF   := # -framework OpenGL -framework GLUT
 
 default: $(BDIR)/$(PROJ)

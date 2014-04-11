@@ -1,0 +1,31 @@
+# Server version 0.08 running on www.smart-browser.com:8123
+# Game ID: 133
+# Board class: halma.CCBoard
+# Timeout: 300000
+# Date: Thu Apr 10 20:11:46 EDT 2014
+# Player 1: Player-0, '110121860', running on www.smart-browser.com
+# Player 2: Player-1, 'random', running on www.smart-browser.com
+# Player 3: Player-2, 'random', running on www.smart-browser.com
+# Player 4: Player-3, 'Human', running on www.smart-browser.com
+START Player-0 110121860
+START Player-1 random
+START Player-2 random
+START Player-3 Human
+0 (0,1) (2,3)
+0 null null
+1 (12,1) (11,0)
+2 (3,14) (4,15)
+3 (13,14) (13,12)
+3 null null
+0 (1,2) (3,4)
+0 null null
+1 (13,1) (12,2)
+2 (1,13) (3,13)
+2 null null
+3 (13,12) (12,12)
+0 (3,0) (3,2)
+0 null null
+1 (14,3) (12,1)
+1 null null
+2 (0,13) (2,11)
+2 null null
