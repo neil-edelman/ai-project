@@ -1,0 +1,193 @@
+\documentclass[twocolumn]{article}
+
+% imports
+\usepackage{times}      % font
+\usepackage{graphicx}   % include graphics
+\usepackage{fullpage}   % book margins -> std margins
+\usepackage{amsmath}    % {align}
+\usepackage{wrapfig}    % {wrapfigure}
+\usepackage{moreverb}   % \verbatimtabinput
+\usepackage[noend,noline]{algorithm2e} % \algorithm
+\usepackage{subfig}     % sub-figure
+\usepackage{textcomp}   % \textmu
+\usepackage{hyperref}   % pdf links
+\usepackage{url}        % url support
+
+% def name, id
+\def\name{Neil Edelman}
+\def\id{110121860}
+
+% ieee style
+\bibliographystyle{ieeetr}
+
+% set algoithm comments
+\SetKwComment{Comment}{$\bullet$}{}
+
+\def\xor{\oplus} % or \veebar
+
+% define "\fig"
+\def\fig#1#2{\begin{figure}[!ht]\begin{center}
+\includegraphics[width=0.5\textwidth]{#1.jpg}
+\end{center}\caption{#2}\label{#1}\end{figure}}
+
+\def\wide#1#2{\begin{figure*}[hptb]\begin{center}
+\includegraphics[height=0.5\textwidth]{#1.jpg}
+\end{center}\vspace{-0pt}\caption{#2}\label{#1}\end{figure*}}
+
+% create new commands
+\def\^#1{\textsuperscript{#1}}
+\def\!{\overline}
+\def\degree{\ensuremath{^\circ}}
+
+% lists
+\renewcommand{\labelenumi}{\arabic{enumi})}
+\renewcommand{\labelenumii}{\alph{enumii})}
+
+% for hyperref
+\hypersetup{
+  colorlinks = true,
+  urlcolor = blue,
+  linkcolor = blue,
+  pdfauthor = {\name},
+  pdftitle = {\name -- \id},
+  pdfsubject = {A1},
+  pdfpagemode = UseNone
+}
+
+% info
+\author{\name~--~\id}
+\title{Cooperative Halma Agent}
+\date{2014-04-06}
+
+\begin{document}
+
+% math eq'ns line up with lists
+\abovedisplayskip=-\baselineskip
+
+\maketitle
+
+\abstract{An artificial agent was created for the game Halma with two opposing players co-operating. The goal was for the two teams of two, oppositely placed, to get all of their pieces in the other team player's squares first.}
+
+``You are required to write a report with a detailed explanation of your approach and reasoning. The report must be typed and grammatically sound. You must submit a .pdf file. The minimum suggested length is 4 pages and should be no more than 5 pages ( 300 words per
+page), but the most important part is to produce a report that is clear and concise. The report must include the following required components:''
+
+\section{Introduction}
+
+The game of Halma has a clearly defined start, middle, and end. Also, co-operative Halma may have a waiting state where all your pieces are done and you're waiting for the other player to finish.
+
+Start:
+
+The agent plays to get a line. A high cost should be implemented for having players on the side.
+
+The parity of the number of starting pieces across the one of the sides determines what starting move is optimal.
+
+The collection of pieces can move horizontally or diagonally. We want to move diagonally, so the pieces should be in diagonal squares. Parity of the board can be used as the heuristic, it would kind of work.
+
+Define a grid, starting with zero, $\binom{x}{y}$. Define the parity as odd whenever $x \xor y$. We assume, without loss of generality, that the player is on the lower left.
+
+Number of players on an even square: 7. Number of players on an odd square: 6. So the even squares get more weight. Although, one even square is in the corner.
+
+Changing directions in a line: an odd piece will have to be inserted?
+
+Breaking symmetry to move.
+
+Avoid double lineups.
+
+The minimum time to transmit to the middle is 5 moves. The maximum gain for any move is one square. With $x$ the number of squares in one-dimension and $x_{i}$ the number of initial squares occupied, the formula is $\lfloor\frac{x}{2} - x_{i}\rfloor = \lfloor\frac{16}{2} - 4\rfloor = 4$. Near to the centre it's even higher. This corresponds to the light-cone ... so for the first four moves, we can hard code them. Ideally, we would learn them from self-play, but we just choose pretty good ones.
+
+Middle:
+
+The agent does not do blocking; blocking would be very sentient.
+
+However, we need to deal with blocks by the other players.
+
+Very much choose the furthest distance since the opposing players can move, then we choose the next-furthest piece, since the players can move again.
+
+The co-operative nature of play causes a good strategy to get the closest piece on the co-operating player and go towards it.
+
+End:
+
+Just apply the farthest piece from the end zone heuristic.
+
+Final:
+
+There is noting we can do once all the goal pieces are in the final position. We just watch and hope.
+
+\section{Motivation}
+
+% 1. An explanation of how your program works, and a motivation for your approach.
+
+This agent takes into account two main observations.
+
+As the size of the groups, $s$, that move across the board increases, the number of moves drastically drops. The average width of the board from start to finish in Manhattan distance can be denoted $d$; similarly, the total number of pieces, $n$. With independent moves, $s = 1$, the number of moves is of the order of $nd$. If you take two pieces across at a time, the rough estimate is $\frac{nd}{2}$, and in general, $\frac{nd}{s}$. If you take all the pieces along at once, $d$. This assumes that the pieces are already in a line and that no one blocks it.
+
+The second observation is that, due to the co-operative nature of the game, we only need bridging the gap half-way. Hopefully our teammate will have a, possibly different, strategy. Since the game is commutative, we can take advantage of their strategy without knowing it. In fact, it doesn't help us if we did know it.
+
+include rough sketches
+
+\section{Theory}
+
+% 2. A brief description of the theoretical basis of the approach (about a half-page, in most cases); references to the text of other documents, such as the textbook, are appropriate but not absolutely necessary. If you use algorithms from other sources, briefly describe the algorithm and give a citation to your source.
+
+gradient-ascent with multiple co-operating agents.\cite{} $\order(n)$, where $n$ is the number of moves to consider.
+
+first we enumerate the moves. The moves are considered for each piece by BFS. $\alpha\beta$-pruning (?) then reduces the moves to one per piece.\cite{} They are compared on-line and the top one is chosen.
+
+The metric taken from the single moves is Equation~\ref{metric} and is cache-friendly with no cases. The space is highly non-conservative (you can jump over pieces,) so this is as good as we're going to get.
+
+\begin{align}
+\max{\abs{y_{1} - y_{2}}, \abs{x_{1} - x_{2}}}\label{metric}
+\end{align}
+
+The reward for going into a goal state.
+
+A reward for going in a line.
+
+Reward for going in front of a player. This encourages co-operation.
+
+\section{Advantages and Disadvantages}
+
+% 3. A summary of the advantages and disadvantages of your approach, expected failure modes, or weaknesses of your program.
+
+The main disadvantage is that it all but ignores the opposing team. I would like to hinder them at the same time causing as little hindrance to me.
+
+Has no memory.
+
+Doesn't adapt strategy.
+
+Is very conducive to GPU programming where it could be accelerated greatly.
+
+The hop function doesn't use $\alpha\beta$-pruning because the value is not monotonic. Namely, we want the agent to consider going back if it can go forward more. We use a search tree, but every node we visit we take off the graph; this results in a fairly sparse tree. We can do this because the game is conservative; that is, memoryless.
+
+\section{Approaches}
+
+% 4. If you tried other approaches during the course of the project, summarize them briefly and discuss how they compared to your final approach.
+
+We started off using an A* algorithm, with the heuristic being the negative slope. A* is good when you have to have a clearly defined metric, which we don't. We might as well use hill-climbing.\cite{}
+
+We considered a three-step solution that would use three different strategies for the beginning, middle, and end. The hill-climbing encodes several of the key features of this approach in the same algorithm. The constant parameters of the hill-climbing were carefully planned to achieve a good beginning. The end was lifted up so that pieces move into their final positions.
+
+%The main advantage of the three-step approach...
+%The opening (and closing) moves was hard to get down because it was assumed that the task is laterally symmetric. This lead to the pieces being horizontal across the line of the direction of travel. Instead, we used longitudinal symmetry with lateral symmetry-breaking to get the pieces aligned.
+
+\section{Improvements}
+
+% 5. A brief description (max. half page) of how you would go about improving your player (e.g. by introducing other AI techniques, changing internal representation etc.).
+
+Co-operation is a key element that would have been improved. If the co-operating player is assumed to be intelligent (ie, not a random player) we have half the work done for us. As well, any piece can be jumped, not just co-operating pieces.
+
+More could be done on figuring out whether or not that is true.
+
+This is a greedy algorithm; it does not account for going back to get an improved position.
+
+It is susceptible to being blocked.
+
+It doesn't co-operate to get to the end; this is not so important as the co-operating player is moving out (hopefully.)
+
+\section{Conclusion}
+
+This was irritating and confusing.
+
+\bibliography{report}
+
+\end{document}
