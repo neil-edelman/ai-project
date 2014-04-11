@@ -91,7 +91,7 @@ public class s110121860Player extends Player {
 				jumping = null;
 				best = done;
 			}
-			System.err.print("Sending at jump: " + best + ".\n----\n\n");
+			System.err.print("Sending at jump: " + move2string(best) + ".\n----\n\n");
 			return best;
 		}
 
@@ -107,7 +107,7 @@ public class s110121860Player extends Player {
 			if(moves.get(0).getTo() != null) {
 				System.err.print("No! I'm confused, but will carry on.\n");
 			} else {
-				System.err.print("Sending at endturn: " + done + ".\n----\n\n");
+				System.err.print("Sending at endturn: " + move2string(best) + ".\n----\n\n");
 				return done;
 			}
 		}
@@ -119,7 +119,7 @@ public class s110121860Player extends Player {
 			}
 		}
 		for(Point p : myStones) if(hill(p) > hill(myClosest)) myClosest = p;
-		augmentHill();
+		augmentHill(myClosest);
 
 		/* output */
 		System.err.println("Closest: " + pt2string(myClosest) + "\n");
@@ -157,7 +157,9 @@ public class s110121860Player extends Player {
 		}
 		System.err.print("The best delta_jump is #" + bestDeltaJumpIndex + " at " + bestDeltaJump + ".\n");
 
-		/* we have two choices */
+		/* we have two choices; be careful -- remember, it's not quite like real
+		 halma where you can pass your turn, hence the second clause, where
+		 we would get the smallest negiative value from the latter */
 		if(bestDeltaJump > bestDelta && bestDeltaJump > 0) {
 			System.err.print("The best delta is a jump!\n");
 			jumping = myJumps[bestDeltaJumpIndex].iterator();
@@ -170,7 +172,7 @@ public class s110121860Player extends Player {
 			isEndingTurn = true;
 		}
 
-		System.err.print("Sending at bottom: " + best + ".\n----\n\n");
+		System.err.print("Sending at bottom: " + move2string(best) + ".\n----\n\n");
 		return best;
 	}
 
@@ -216,10 +218,20 @@ public class s110121860Player extends Player {
 
 	}
 
+	Point a = new Point(), b = new Point(), c = new Point();
+
 	/** this sets the hill to be a little bit steeper in certain points
 	 todo */
-	void augmentHill() {
-		
+	private void augmentHill(Point p) {
+		/* static Point a, b, c; ha it didn't like that */
+		switch(playerID) {
+			case 0:
+				a.x = p.x + 1;
+				a.y = p.y + 1; break;
+			case 1:
+			case 2:
+			case 4:
+		}
 	}
 
 	/** do something mysterious */
