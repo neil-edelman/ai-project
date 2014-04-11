@@ -8,7 +8,7 @@ SDIR  := src
 BDIR  := bin
 BACK  := backup
 ICON  := icon.ico
-EXTRA := # $(SDIR)/icon.rc
+EXTRA := $(SDIR)/Fail.java # $(SDIR)/icon.rc
 INST  := $(PROJ)-$(VA)_$(VB)
 OBJS  := $(patsubst %,$(BDIR)/%.class,$(FILES))
 SRCS  := $(patsubst %,$(SDIR)/%.java,$(FILES))
@@ -74,4 +74,4 @@ clean:
 
 backup:
 	@mkdir -p $(BACK)
-	zip $(BACK)/$(INST)-`date +%Y-%m-%dT%H%M%S`.zip readme.txt gpl.txt copying.txt Makefile $(SRCS) $(H) $(SDIR)/$(ICON) $(EXTRA)
+	zip $(BACK)/$(INST)-`date +%Y-%m-%dT%H%M%S`.zip readme.txt gpl.txt copying.txt Makefile $(SRCS) $(H) $(EXTRA) # $(SDIR)/$(ICON)
