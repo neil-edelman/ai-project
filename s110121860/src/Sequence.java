@@ -4,8 +4,11 @@ package s110121860;
 /* package halma.CCMove; <- "is not public in halma.CCMove; cannot be accessed
  from outside package;" java packages; why do you have to be so confusing? */
 
+import java.lang.Iterable;
+import java.util.Iterator;
+import java.lang.UnsupportedOperationException;
+import java.util.NoSuchElementException;
 import java.awt.Point;
-//import java.util.LinkedList;
 
 import halma.CCBoard;
 import halma.CCMove;
@@ -24,8 +27,7 @@ class Sequence implements Iterable {
 	private static int playerID;
 	private static CCBoard board;
 	private static int hill[][];
-	//private static LinkedList<CCMove> path = new LinkedList<CCMove>();
-	private static Sequence highest;
+	private static Sequence highestSoFar;
 
 	/* class variables */
 	private Sequence parent;
@@ -34,6 +36,8 @@ class Sequence implements Iterable {
 	private Point here = new Point();
 	/* private CCMove buffer[] = new CCMove[8]; :[ */
 	private CCMove move[] = new CCMove[8];
+	/* the highest in the subtree rooted at this */
+	private Sequence highest;
 
 	/** cool sol'n but needs constant malloc/free;
 	 fixme: have a pool of Sequences */
@@ -57,7 +61,8 @@ class Sequence implements Iterable {
 			new Sequence(this, i, move[i].getTo());
 		}
 		/* is it the highest we've seen? */
-		if(highest == null || highest.height < height) highest = this;
+		if(highestSoFar == null || highestSoFar.height < height) highestSoFar = this;
+		this.highest = highestSoFar;
 	}
 
 	/** return the bfs (fixme) with all the sequences starting at a peice
@@ -88,24 +93,58 @@ class Sequence implements Iterable {
 		}
 
 		/* reset highest */
-		highest = null;
+		highestSoFar = null;
 
 		/* do searching! */
 		return new Sequence((Sequence)null, 0, start);
 	}
 
-	/** @return the highest jump we did on the last find() */
+	/** @return the highest jump we did on the last find()
+	 @depreciated use getHighest */
 	public static int highest() {
-		if(highest == null) return Integer.MIN_VALUE; // shouldn't happen
-		return highest.height;
+		if(highestSoFar == null) return Integer.MIN_VALUE; // shouldn't happen
+		return highestSoFar.height;
 	}
 
-	/** @return iterator to the highest peak */
-	public Iterator . . . muhahahahahahaha
+	/** @return the highest point in the Sequence */
+	public int getHighest() { return this.highest.height; }
 
-	/** fills the move[]
-	 @param from  the point that you want the adjecent
-	 @param steps the 'steps' neighbor */
+	/** @return iterator to the highest peak */
+	public Iterator<CCMove> iterator() {
+		assert(highest != null);
+		return new SequenceIterator(this, highest);
+	}
+
+	/* this is the iterator */
+	class SequenceIterator implements Iterator<CCMove> {
+		Sequence it;
+		Sequence goal;
+		/** the iterator starts at the current node (the root, one assumes)
+		 and is trying to get to the some node (ostensibly the highest) */
+		public SequenceIterator(final Sequence start, final Sequence goal) {
+			this.it   = start;
+			this.goal = goal;
+			
+		}
+		/** while it's not there */
+		public boolean hasNext() { return !(goal == it); }
+		/** the moves that you can do is bounded by a reasonable number, so I
+		 wouldn't worry about this taking O(n) */
+		public CCMove next() throws NoSuchElementException {
+			Sequence i;
+			CCMove move;
+			for(i = goal; i != null && i.parent != it; i = i.parent);
+			if(i == null) throw new NoSuchElementException("not connected");
+			move = it.move[i.dirFromParent];
+			it = i;
+			return move;
+		}
+		public void remove() { throw new UnsupportedOperationException("can't do that"); }
+	}
+
+	/** fills the move[] with values from the adjacent nodes steps steps away
+	 @param from  the value associtated with this Sequence
+	 @param steps */
 	private void getAdjacent(final Point from, final int steps) {
 		CCMove consider;
 		int dx, dy;
@@ -132,7 +171,7 @@ class Sequence implements Iterable {
 		}
 	}
 
-	/** maybe this works */
+	/** CCBoard.isLegal stripped down so that it actually (maybe) works */
 	private boolean isLegal(final CCMove m) {
 		if(m == null) return false;
 		Point to = m.getTo();
@@ -172,7 +211,11 @@ class Sequence implements Iterable {
 
 	public String toString() {
 		String s = "";
-		for(int i = 0; i < 8; i++) s += "(" + moves[i][0] + "," + moves[i][1] + "): " + s110121860Player.move2string(move[i]) + "|";
+		Iterator i = this.iterator();
+		/*for(int i = 0; i < 8; i++) s += "(" + moves[i][0] + "," + moves[i][1] + "): " + s110121860Player.move2string(move[i]) + "|";*/
+		/* i.next() is Object? but that doesn't make any sense, clearly the docs
+		 say: Iterator<E>: E next() */
+		while(i.hasNext()) s += s110121860Player.move2string((CCMove)i.next()) + "; ";
 		return s;
 	}
 }

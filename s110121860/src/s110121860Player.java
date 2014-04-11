@@ -61,7 +61,6 @@ public class s110121860Player extends Player {
 
 	/* convenient things */
 	private boolean isInitialised = false;
-	// private boolean isMoving   = false; accessed from nextMoves.isEmpty()
 	private int    move = 0;
 	private Corner corner;
 	private Corner ally;
@@ -71,6 +70,7 @@ public class s110121860Player extends Player {
 	private LinkedList<CCMove> nextMoves = new LinkedList<CCMove>(); /* nextMoves picks from storedMove */
 	private Point[] myStones  = new Point[stones];
 	private Sequence[] mySequences = new Sequence[stones];
+	private CCBoard board;
 
 	/* used at the end of jumps */
 	private CCMove goNowhere;
@@ -183,7 +183,8 @@ public class s110121860Player extends Player {
 	/** do something mysterious */
 	public Board createBoard() {
 		System.err.print("createBoard FTW!!!!\n");
-		return new CCBoard();
+		board = new CCBoard();
+		return board;
 	}
 
 	/** chooseMove calls this each time */
@@ -230,11 +231,18 @@ public class s110121860Player extends Player {
 
 	/** prints the board */
 	public String toString() {
+
+		if(board == null) return "(no board)";
+
 		String s = "";
+		Point p = new Point();
 		for(int y = 0; y < size; y++) {
 			for(int x = 0; x < size; x++) {
+				p.x = x;
+				p.y = y;
 				/* this is messed up; first y and then x */
-				s += "" + pieces[x][y].ordinal() + "";
+				/*s += "" + pieces[x][y].ordinal() + "";*/
+				s += "" + board.getPieceAt(p);
 			}
 			s += "\n";
 		}
@@ -245,6 +253,7 @@ public class s110121860Player extends Player {
 	public Move chooseMove(Board theboard) {
 		Point from, to;
 		CCMove best = null;
+		int height;
 		/* although you are allowed to pass in Halma, the game doesn't let
 		 you :[; therefore we allow negaive moves */
 		int bestDelta = Integer.MIN_VALUE /* 0 */, delta;
@@ -261,9 +270,10 @@ public class s110121860Player extends Player {
 		/* update legal moves on this portion of the Sequence
 		 (don't be fooled by the get) */
 		ArrayList<CCMove> moves = board.getLegalMoves();
+		/* fixme: this is not necessary, just use board.board */
 		updatePieces(board);
 
-		/* stroke the hill */
+		/* stroke the hill () */
 		for(int y = 0; y < size; y++) {
 			for(int x = 0; x < size; x++) {
 				hill[y][x] = constHill[y][x];
@@ -275,8 +285,8 @@ public class s110121860Player extends Player {
 		/* do jump moves! */
 		for(int i = 0; i < stones; i++) {
 			mySequences[i] = Sequence.find(myStones[i], hill, board);
-			height = Sequence.highest();
-			System.err.print("myStones["+i+"] is at " + pt2string(myStones[i]) + " and has Sequence " + mySequences[i] + " with height " + hight + ".\n");
+			height = mySequences[i].getHighest();
+			System.err.print("myStones["+i+"] is at " + pt2string(myStones[i]) + " and has Sequence " + mySequences[i] + " with height " + height + ".\n");
 		}
 
 		System.err.print("Choose move for player " + corner + " (#" + playerID + "):\n");
@@ -304,11 +314,7 @@ public class s110121860Player extends Player {
 		return (best == null) ? goNowhere : best;
 	}
 
-	/** "Exception in s110121860.s110121860Player.choseMove()
-	 java.lang.NullPointerException" okay */
-	public Move choseMove() {
-		System.err.print("s110121860Player: this is CRAZY!!!\n");
-		return null;
-	}
+	/** "ABORTING: Exception in s110121860.s110121860Player.choseMove()
+	 java.lang.NullPointerException" what does that mean? */
 
 }
