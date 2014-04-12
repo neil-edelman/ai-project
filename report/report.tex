@@ -73,8 +73,19 @@ page), but the most important part is to produce a report that is clear and conc
 
 \section{Introduction}
 
-The game of Halma has a clearly defined start, middle, and end. Also, co-operative Halma may have a waiting state where all your pieces are done and you're waiting for the other player to finish.
+The game of Halma has a clearly defined start, middle, and end.!!!\cite{} The version we play is co-operative, so you may have a waiting state where all your pieces are done and you're waiting for the other player to finish.
 
+The board is a graph. The finite pieces are put into the graph in a start state. We require that only one piece occupies a node. Each piece has one of four distinguishable colours. The nodes are arranged in a square; the number of nodes across the top and sides is $x$ (which is 16, in our case.) The pieces are initially in teams at the four corners, and opposite corners co-operate; the goal is to have both you and the co-operating player switch spots before the other team does.
+
+The maximum advancement is one square per turn.
+This naturally leads us to define define the move cone $C_{t_{0}}(t)$ as anywhere any pieces could have moved at time $t$, where time is discrete and measured in turns. It is a vector  Each $t_{0}$, the time selected, has a possibly different $C_{t_{0}}$, but they will have smooth boundaries between $C_{t_{n}}$ and $C_{t_{n+1}}$. We define our beginning as 
+
+The start state $C_{0}$(t) for a player 
+The minimum time to transmit to the middle is 5 moves. The maximum gain for any move is one square. With $x$ the number of squares in one-dimension and $x_{i}$ the number of initial squares occupied, the formula is $\lfloor\frac{x}{2} - x_{i}\rfloor = \lfloor\frac{16}{2} - 4\rfloor = 4$. Near to the centre it's even higher. This corresponds to the light-cone ... so for the first four moves, we can hard code them. Ideally, we would learn them from self-play, but we just choose pretty good ones.
+
+Define a grid, starting with zero, $\binom{x}{y}$. Define the parity as odd whenever $x \xor y$. We assume, without loss of generality, that the player is on the lower left.
+
+The start state is defined when 
 Start:
 
 The agent plays to get a line. A high cost should be implemented for having players on the side.
@@ -83,7 +94,6 @@ The parity of the number of starting pieces across the one of the sides determin
 
 The collection of pieces can move horizontally or diagonally. We want to move diagonally, so the pieces should be in diagonal squares. Parity of the board can be used as the heuristic, it would kind of work.
 
-Define a grid, starting with zero, $\binom{x}{y}$. Define the parity as odd whenever $x \xor y$. We assume, without loss of generality, that the player is on the lower left.
 
 Number of players on an even square: 7. Number of players on an odd square: 6. So the even squares get more weight. Although, one even square is in the corner.
 
@@ -93,7 +103,6 @@ Breaking symmetry to move.
 
 Avoid double lineups.
 
-The minimum time to transmit to the middle is 5 moves. The maximum gain for any move is one square. With $x$ the number of squares in one-dimension and $x_{i}$ the number of initial squares occupied, the formula is $\lfloor\frac{x}{2} - x_{i}\rfloor = \lfloor\frac{16}{2} - 4\rfloor = 4$. Near to the centre it's even higher. This corresponds to the light-cone ... so for the first four moves, we can hard code them. Ideally, we would learn them from self-play, but we just choose pretty good ones.
 
 Middle:
 
@@ -113,6 +122,20 @@ Final:
 
 There is noting we can do once all the goal pieces are in the final position. We just watch and hope.
 
+		/* although you are allowed to pass in Halma, the game doesn't let
+		 you :[; therefore we allow negative moves
+		 (otherwise we would set them to zero) */
+		/* this happens once the player_ids are set (chooseMove is called) */
+isInitialise
+		/* we have two choices; be careful -- remember, it's not quite like real
+		 halma where you can pass your turn, hence the second clause, where
+		 we would get the smallest negiative value from the latter */
+			/* it is concivable that getLegalMoves returns empty, then we would be
+			 up the creek, but hopefully it's good */
+	/** we don't have the player id to fill this out at first, but it must be
+	 filled out before we can play */
+
+
 \section{Motivation}
 
 % 1. An explanation of how your program works, and a motivation for your approach.
@@ -129,14 +152,14 @@ include rough sketches
 
 % 2. A brief description of the theoretical basis of the approach (about a half-page, in most cases); references to the text of other documents, such as the textbook, are appropriate but not absolutely necessary. If you use algorithms from other sources, briefly describe the algorithm and give a citation to your source.
 
-gradient-ascent with multiple co-operating agents.\cite{} $\order(n)$, where $n$ is the number of moves to consider.
+gradient-ascent with multiple co-operating agents.\cite{} ??$order(n)$, where $n$ is the number of moves to consider.
 
-first we enumerate the moves. The moves are considered for each piece by BFS. $\alpha\beta$-pruning (?) then reduces the moves to one per piece.\cite{} They are compared on-line and the top one is chosen.
+first we enumerate the moves. The moves are considered for each piece by BFS. We did not use $\alpha\beta$-pruning because the numbers were not monotonic.\cite{} They are compared on-line and the top one is chosen.
 
 The metric taken from the single moves is Equation~\ref{metric} and is cache-friendly with no cases. The space is highly non-conservative (you can jump over pieces,) so this is as good as we're going to get.
 
 \begin{align}
-\max{\abs{y_{1} - y_{2}}, \abs{x_{1} - x_{2}}}\label{metric}
+\max{???abs{y_{1} - y_{2}}, ???abs{x_{1} - x_{2}}}\label{metric}
 \end{align}
 
 The reward for going into a goal state.
@@ -173,6 +196,8 @@ We considered a three-step solution that would use three different strategies fo
 \section{Improvements}
 
 % 5. A brief description (max. half page) of how you would go about improving your player (e.g. by introducing other AI techniques, changing internal representation etc.).
+
+As initially envisioned, the path would change based on the actual path. This allows adaptation to the other player's moves, by using the closest path that encompasses other player's pieces. Now the hill-climbing algorithm sets the hill and keeps it static.
 
 Co-operation is a key element that would have been improved. If the co-operating player is assumed to be intelligent (ie, not a random player) we have half the work done for us. As well, any piece can be jumped, not just co-operating pieces.
 
