@@ -1,4 +1,5 @@
-/** @author Neil */
+/** failed attempts
+ @author Neil */
 
 /** "ABORTING: Exception in s110121860.s110121860Player.choseMove()
  java.lang.NullPointerException" what does that mean? */

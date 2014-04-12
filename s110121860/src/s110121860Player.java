@@ -27,6 +27,7 @@ public class s110121860Player extends Player {
 	/* the params for hill-climbing */
 	private static final int param_distance      = 1;
 	private static final int param_bonus_endzone = 10;
+	private static final int param_diagonal      = 10;
 
 	/* no move */
 	private static CCMove done;
@@ -35,7 +36,6 @@ public class s110121860Player extends Player {
 	private boolean isInitialised = false;
 	private boolean isEndingTurn = false;
 	private CCBoard board; /* our copy */
-	private int constHill[][]  = new int[size][size];
 	private int hill[][]       = new int[size][size];
 	private Sequence[] myJumps = new Sequence[stones];
 	private Iterator<CCMove> jumping;
@@ -113,11 +113,11 @@ public class s110121860Player extends Player {
 		}
 
 		/* stroke the hill */
-		for(int y = 0; y < size; y++) {
+		/*for(int y = 0; y < size; y++) {
 			for(int x = 0; x < size; x++) {
 				hill[y][x] = constHill[y][x];
 			}
-		}
+		} <- didn't get there yet :[ */
 		for(Point p : myStones) if(hill(p) > hill(myClosest)) myClosest = p;
 		augmentHill(myClosest);
 
@@ -181,11 +181,12 @@ public class s110121860Player extends Player {
 	private void initialise() throws Exception {
 		Player p;
 		int metric, manhattan;
+		int q, r, s, t;
 
 		/* generate a flag that tells the computer we're done */
 		done = new CCMove(playerID, null, null);
 		/* fixme! I don't have the internet :[ */
-		//p = Player(playerID);
+		//p = Player(playerID); lol
 		switch(playerID) {
 			case 0: p = Player.TOP_LEFT; break;
 			case 1: p = Player.BOTTOM_LEFT; break;
@@ -203,11 +204,25 @@ public class s110121860Player extends Player {
 				metric    = metric(a, b);
 				manhattan = manhattan(a, b);
 				/* the metric */
-				constHill[y][x]  = (15 - metric) * param_distance;
+				hill[y][x]  = (15 - metric) * param_distance;
 				/* augment squares in the goal zone to make them more attactive */
-				if((metric <= 3) && (manhattan <= 4)) constHill[y][x] += param_bonus_endzone;
-				/* fixme: augment squares on the main diagonal? maybe not */
-				System.err.printf("%3d", constHill[y][x]);
+				if((metric <= 3) && (manhattan <= 4)) hill[y][x] += param_bonus_endzone;
+				/* fixme: augment squares on the main diagonal dynanically
+				 based on where you snake to */
+				/* really conviluted way to tell diagonal */
+				a.x += 1;
+				q = metric(a, b);
+				a.x -= 2;
+				r = metric(a, b);
+				a.x += 1;
+				a.y += 1;
+				s = metric(a, b);
+				a.y -= 2;
+				t = metric(a, b);
+				a.y += 1;
+				if(   (q == s) && (r == t)
+				   || (q == t) && (r == s)) hill[y][x] += param_diagonal;
+				System.err.printf("%3d", hill[y][x]);
 			}
 			System.err.printf("\n");
 		}
@@ -221,9 +236,11 @@ public class s110121860Player extends Player {
 	Point a = new Point(), b = new Point(), c = new Point();
 
 	/** this sets the hill to be a little bit steeper in certain points
-	 todo */
+	 that follow the path
+	 @param p the players closest peice
+	 fixme! todo! */
 	private void augmentHill(Point p) {
-		/* static Point a, b, c; ha it didn't like that */
+		/* static Point a; ha it didn't like that */
 		switch(playerID) {
 			case 0:
 				a.x = p.x + 1;
@@ -281,7 +298,7 @@ public class s110121860Player extends Player {
 	 @return the string representation of a move */
 	public static String move2string(final CCMove m) {
 		if(m == null) return "(null)";
-		return m.getPlayerID() + ":" + pt2string(m.getFrom()) + "->" + pt2string(m.getTo());
+		return id2string(m.getPlayerID()) + ":" + pt2string(m.getFrom()) + "->" + pt2string(m.getTo());
 	}
 
 	/** an alternative representation where it equals the one shown graphically
@@ -317,8 +334,8 @@ public class s110121860Player extends Player {
 		TOP_RIGHT(2),
 		BOTTOM_RIGHT(3);
 
-		int v;
-	
+		private int v;
+
 		private Player(int v) {
 			this.v = v;
 		}
@@ -332,10 +349,11 @@ public class s110121860Player extends Player {
 				case 0: return new Point(size - 1, size - 1);
 				case 1: return new Point(       0, size - 1);
 				case 2: return new Point(size - 1, 0);
-				case 4: return new Point(       0, 0);
+				case 3: return new Point(       0, 0);
 			}
 			return null;
 		}
+
 		/*public Enum<Player> player(int player) {
 			return player;
 		}*/
