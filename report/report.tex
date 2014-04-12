@@ -27,11 +27,11 @@
 
 % define "\fig"
 \def\fig#1#2{\begin{figure}[!ht]\begin{center}
-\includegraphics[width=0.5\textwidth]{#1.jpg}
+\includegraphics[width=0.5\textwidth]{#1}
 \end{center}\caption{#2}\label{#1}\end{figure}}
 
 \def\wide#1#2{\begin{figure*}[hptb]\begin{center}
-\includegraphics[height=0.5\textwidth]{#1.jpg}
+\includegraphics[height=0.5\textwidth]{#1}
 \end{center}\vspace{-0pt}\caption{#2}\label{#1}\end{figure*}}
 
 % create new commands
@@ -68,73 +68,43 @@
 
 \abstract{An artificial agent was created for the game Halma with two opposing players co-operating. The goal was for the two teams of two, oppositely placed, to get all of their pieces in the other team player's squares first.}
 
-``You are required to write a report with a detailed explanation of your approach and reasoning. The report must be typed and grammatically sound. You must submit a .pdf file. The minimum suggested length is 4 pages and should be no more than 5 pages ( 300 words per
-page), but the most important part is to produce a report that is clear and concise. The report must include the following required components:''
+%``You are required to write a report with a detailed explanation of your approach and reasoning. The report must be typed and grammatically sound. You must submit a .pdf file. The minimum suggested length is 4 pages and should be no more than 5 pages ( 300 words per
+%page), but the most important part is to produce a report that is clear and concise. The report must include the following required components:''
 
 \section{Introduction}
 
-The game of Halma has a clearly defined start, middle, and end.!!!\cite{} The version we play is co-operative, so you may have a waiting state where all your pieces are done and you're waiting for the other player to finish.
+The game of Halma has a clearly defined start, middle, and end.\cite{whitehill2002halma} The version we play is co-operative, so you may have a waiting state where all your pieces are done and you're waiting for the other player to finish.
 
-The board is a graph. The finite pieces are put into the graph in a start state. We require that only one piece occupies a node. Each piece has one of four distinguishable colours. The nodes are arranged in a square; the number of nodes across the top and sides is $x$ (which is 16, in our case.) The pieces are initially in teams at the four corners, and opposite corners co-operate; the goal is to have both you and the co-operating player switch spots before the other team does.
+The board is a graph. The finite pieces are put into the graph in a start state. We require that only one piece occupies a node. Each piece has one of four distinguishable colours. The nodes are arranged in a square; the number of nodes across the top and sides is $x_{0}$ (which is 16, in our case.) The pieces are initially in teams at the four corners, and opposite corners co-operate; the goal is to have both you and the co-operating player switch spots before the other team does.
+
+Define a grid, starting with zero, $\binom{x}{y}$. Define the parity as odd whenever $x \xor y$. We assume, without loss of generality, that the player is on the upper-left.
 
 The maximum advancement is one square per turn.
-This naturally leads us to define define the move cone $C_{t_{0}}(t)$ as anywhere any pieces could have moved at time $t$, where time is discrete and measured in turns. It is a vector  Each $t_{0}$, the time selected, has a possibly different $C_{t_{0}}$, but they will have smooth boundaries between $C_{t_{n}}$ and $C_{t_{n+1}}$. We define our beginning as 
+This naturally leads us to define define the move cone $C_{t_{0}}(t)$ as anywhere any pieces could have moved at time $t$, where time is discrete and measured in turns. It is a vector  Each $t_{0}$, the time selected, has a possibly different $C_{t_{0}}$, but they will have smooth boundaries between $C_{t_{n}}$ and $C_{t_{n+1}}$. We define our beginning as when the $C_{t}$ of different players do not intersect. Similarly the end game is the reverse.
 
-The start state $C_{0}$(t) for a player 
-The minimum time to transmit to the middle is 5 moves. The maximum gain for any move is one square. With $x$ the number of squares in one-dimension and $x_{i}$ the number of initial squares occupied, the formula is $\lfloor\frac{x}{2} - x_{i}\rfloor = \lfloor\frac{16}{2} - 4\rfloor = 4$. Near to the centre it's even higher. This corresponds to the light-cone ... so for the first four moves, we can hard code them. Ideally, we would learn them from self-play, but we just choose pretty good ones.
+From the start state $C_{0}$(t), one assumes the horizon is 5 moves, then we we be in the middle game. In general, the formula is $\lfloor\frac{x}{2} - x_{i}\rfloor = \lfloor\frac{16}{2} - 4\rfloor = 4$.
+For the first four moves, we can hard code them. Ideally, we would learn them from self-play.
 
-Define a grid, starting with zero, $\binom{x}{y}$. Define the parity as odd whenever $x \xor y$. We assume, without loss of generality, that the player is on the lower left.
+We need symmetry breaking to move. We keep in mind that double lineups are a wall.
 
-The start state is defined when 
-Start:
+In the middle game, we need to deal with blocks by the other players.
+You do this by changing directions in a line, as seen on Figure~\ref{corners.jpg}.
 
-The agent plays to get a line. A high cost should be implemented for having players on the side.
-
-The parity of the number of starting pieces across the one of the sides determines what starting move is optimal.
-
-The collection of pieces can move horizontally or diagonally. We want to move diagonally, so the pieces should be in diagonal squares. Parity of the board can be used as the heuristic, it would kind of work.
-
-
-Number of players on an even square: 7. Number of players on an odd square: 6. So the even squares get more weight. Although, one even square is in the corner.
-
-Changing directions in a line: an odd piece will have to be inserted?
-
-Breaking symmetry to move.
-
-Avoid double lineups.
-
-
-Middle:
-
-The agent does not do blocking; blocking would be very sentient.
-
-However, we need to deal with blocks by the other players.
+\fig{corners.jpg}{The leftmost piece should go left instead of down where it will be blocked.}
 
 Very much choose the furthest distance since the opposing players can move, then we choose the next-furthest piece, since the players can move again.
 
 The co-operative nature of play causes a good strategy to get the closest piece on the co-operating player and go towards it.
 
-End:
-
-Just apply the farthest piece from the end zone heuristic.
-
-Final:
+In the end game is when the move cones diverge so you don't need to worry about the other players. Just apply the farthest piece from the end zone heuristic.
 
 There is noting we can do once all the goal pieces are in the final position. We just watch and hope.
 
-		/* although you are allowed to pass in Halma, the game doesn't let
-		 you :[; therefore we allow negative moves
-		 (otherwise we would set them to zero) */
-		/* this happens once the player_ids are set (chooseMove is called) */
-isInitialise
-		/* we have two choices; be careful -- remember, it's not quite like real
-		 halma where you can pass your turn, hence the second clause, where
-		 we would get the smallest negiative value from the latter */
-			/* it is concivable that getLegalMoves returns empty, then we would be
-			 up the creek, but hopefully it's good */
-	/** we don't have the player id to fill this out at first, but it must be
-	 filled out before we can play */
 
+The collection of pieces can move horizontally or diagonally. We want to move diagonally, so the pieces should be in diagonal squares. Parity of the board can be used as the heuristic.
+The parity of the number of starting pieces across the one of the sides determines what starting move is optimal.
+
+Number of players on an even square: 7. Number of players on an odd square: 6. So the even squares get more weight. Although, one even square is in the corner.
 
 \section{Motivation}
 
@@ -143,30 +113,56 @@ isInitialise
 This agent takes into account two main observations.
 
 As the size of the groups, $s$, that move across the board increases, the number of moves drastically drops. The average width of the board from start to finish in Manhattan distance can be denoted $d$; similarly, the total number of pieces, $n$. With independent moves, $s = 1$, the number of moves is of the order of $nd$. If you take two pieces across at a time, the rough estimate is $\frac{nd}{2}$, and in general, $\frac{nd}{s}$. If you take all the pieces along at once, $d$. This assumes that the pieces are already in a line and that no one blocks it.
+The agent should play to get a single line.
 
 The second observation is that, due to the co-operative nature of the game, we only need bridging the gap half-way. Hopefully our teammate will have a, possibly different, strategy. Since the game is commutative, we can take advantage of their strategy without knowing it. In fact, it doesn't help us if we did know it.
 
-include rough sketches
+Notice that in several configurations it is impossible to win (Figure~\ref{deadlock.jpg}, and in some rare cases it will be impossible to move.
+
+\fig{deadlock.jpg}{Deadlock.}
 
 \section{Theory}
 
 % 2. A brief description of the theoretical basis of the approach (about a half-page, in most cases); references to the text of other documents, such as the textbook, are appropriate but not absolutely necessary. If you use algorithms from other sources, briefly describe the algorithm and give a citation to your source.
 
-gradient-ascent with multiple co-operating agents.\cite{} ??$order(n)$, where $n$ is the number of moves to consider.
+We used gradient-ascent with multiple co-operating agents.\cite{chakraborty2008mb} $\mathcal{O}(n)$, where $n$ is the number of moves to consider.
 
-first we enumerate the moves. The moves are considered for each piece by BFS. We did not use $\alpha\beta$-pruning because the numbers were not monotonic.\cite{} They are compared on-line and the top one is chosen.
+In Figures~\ref{human1.jpg}~and~\ref{human2.jpg} we learned an good strategy for playing the game. This led naturally to a hill that has features that tweak the AI to behaving how you would like.
 
-The metric taken from the single moves is Equation~\ref{metric} and is cache-friendly with no cases. The space is highly non-conservative (you can jump over pieces,) so this is as good as we're going to get.
+\fig{human1.jpg}{Play as a human.}
+
+\fig{human2.jpg}{Play as a human.}
+
+First we enumerate the moves. The moves are considered for each piece by a breath-first search. We did not use $\alpha\beta$-pruning because the numbers were not monotonic.\cite{knuth1976analysis} They are compared on-line and the top one is chosen.
+
+The metric taken from the single moves is Equation~\ref{metric} and is cache-friendly with no cases. The general space has a complicated metric (you can jump over pieces,) so this is as good as we're going to get.
 
 \begin{align}
-\max{???abs{y_{1} - y_{2}}, ???abs{x_{1} - x_{2}}}\label{metric}
+\max{\left(|y_{1} - y_{2}|, |x_{1} - x_{2}|\right)}\label{metric}
 \end{align}
 
 The reward for going into a goal state.
 
 A reward for going in a line.
 
-Reward for going in front of a player. This encourages co-operation.
+Reward for going in front of a player. This encourages co-operation. We implemented it as a constant function added to the diagonal.
+
+\fig{param0.jpg}{The groove parameter set to 0.}
+
+\fig{param5.jpg}{The groove parameter set to 5.}
+
+\fig{param10.jpg}{The groove parameter set to 10.}
+
+Although you are allowed to pass in halma, our game doesn't let
+you; therefore we allow negative moves
+
+We don't know the player ids when we are connecting. This happens once the player ids are set (chooseMove is called,) and we initialise.
+
+The jumps one square and multiple squares are calculated separately, then they are combined.
+We have two choices; be careful -- remember, it's not quite like real
+halma where you can pass your turn. It is quite possible to be stuck
+in a situation where we should get the smallest negative value.
+It is conceivable that getLegalMoves returns empty, then there would be nothing we could do.
 
 \section{Advantages and Disadvantages}
 
@@ -186,7 +182,7 @@ The hop function doesn't use $\alpha\beta$-pruning because the value is not mono
 
 % 4. If you tried other approaches during the course of the project, summarize them briefly and discuss how they compared to your final approach.
 
-We started off using an A* algorithm, with the heuristic being the negative slope. A* is good when you have to have a clearly defined metric, which we don't. We might as well use hill-climbing.\cite{}
+We started off using an A* algorithm, with the heuristic being the negative slope. A* is good when you have to have a clearly defined metric, which we don't. We might as well use hill-climbing.\cite{gelperin1977optimality}
 
 We considered a three-step solution that would use three different strategies for the beginning, middle, and end. The hill-climbing encodes several of the key features of this approach in the same algorithm. The constant parameters of the hill-climbing were carefully planned to achieve a good beginning. The end was lifted up so that pieces move into their final positions.
 
@@ -197,21 +193,23 @@ We considered a three-step solution that would use three different strategies fo
 
 % 5. A brief description (max. half page) of how you would go about improving your player (e.g. by introducing other AI techniques, changing internal representation etc.).
 
+\fig{stupid.pdf}{Manually varying hill-climbing groove parameter.}
+
+Figure~\ref{stupid.pdf} shows manually varying the groove parameter and how that affected winning against a random player. This could have been learnt instead of hard-coding.
+
 As initially envisioned, the path would change based on the actual path. This allows adaptation to the other player's moves, by using the closest path that encompasses other player's pieces. Now the hill-climbing algorithm sets the hill and keeps it static.
 
 Co-operation is a key element that would have been improved. If the co-operating player is assumed to be intelligent (ie, not a random player) we have half the work done for us. As well, any piece can be jumped, not just co-operating pieces.
 
-More could be done on figuring out whether or not that is true.
+%More could be done on figuring out whether or not that is true.
 
-This is a greedy algorithm; it does not account for going back to get an improved position.
-
-It is susceptible to being blocked.
+This is a greedy algorithm; it does not account for going back to get an improved position. It is susceptible to being blocked.
 
 It doesn't co-operate to get to the end; this is not so important as the co-operating player is moving out (hopefully.)
 
-\section{Conclusion}
+%\section{Conclusion}
 
-This was irritating and confusing.
+%This was irritating and confusing.
 
 \bibliography{report}
 

@@ -1,0 +1,22 @@
+\begin{thebibliography}{1}
+
+\bibitem{whitehill2002halma}
+B.~Whitehill, ``Halma and chinese checkers: Origins and variations,'' {\em
+  Board Games in Academia}, pp.~37--47, 2002.
+
+\bibitem{chakraborty2008mb}
+D.~Chakraborty and S.~Sen, ``Mb-aim-fsi: A model based framework for exploiting
+  gradient ascent multiagent learners in strategic interactions,'' in {\em
+  Proceedings of the 7th international joint conference on Autonomous agents
+  and multiagent systems-Volume 1}, pp.~371--378, International Foundation for
+  Autonomous Agents and Multiagent Systems, 2008.
+
+\bibitem{knuth1976analysis}
+D.~E. Knuth and R.~W. Moore, ``An analysis of alpha-beta pruning,'' {\em
+  Artificial intelligence}, vol.~6, no.~4, pp.~293--326, 1976.
+
+\bibitem{gelperin1977optimality}
+D.~Gelperin, ``On the optimality of a< sup>∗</sup>,'' {\em Artificial
+  Intelligence}, vol.~8, no.~1, pp.~69--76, 1977.
+
+\end{thebibliography}
