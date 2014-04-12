@@ -27,7 +27,7 @@ public class s110121860Player extends Player {
 	/* the params for hill-climbing */
 	private static final int param_distance      = 1;
 	private static final int param_bonus_endzone = 10;
-	private static final int param_diagonal      = 10;
+	private static final int param_diagonal      = 4;
 
 	/* no move */
 	private static CCMove done;
